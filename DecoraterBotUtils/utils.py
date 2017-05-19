@@ -2,6 +2,8 @@
 Utils for DecoraterBot.
 """
 
+__all__ = ['get_plugin_full_name', 'GitHubRoute',
+           'PluginData', 'YTDLLogger']
 
 
 def get_plugin_full_name(plugin_name):
