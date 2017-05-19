@@ -1,6 +1,12 @@
 """
 Utils for DecoraterBot.
 """
+import json
+import os
+import sys
+
+import discord
+
 
 __all__ = ['get_plugin_full_name', 'GitHubRoute',
            'PluginData', 'YTDLLogger', 'construct_reply',
