@@ -3,7 +3,8 @@ Utils for DecoraterBot.
 """
 
 __all__ = ['get_plugin_full_name', 'GitHubRoute',
-           'PluginData', 'YTDLLogger']
+           'PluginData', 'YTDLLogger', 'construct_reply',
+           'BotPMError']
 
 
 def get_plugin_full_name(plugin_name):
@@ -13,6 +14,13 @@ def get_plugin_full_name(plugin_name):
     if plugin_name is not '':
         return 'DecoraterBotCore.plugins.' + plugin_name
     return None
+
+
+def construct_reply(message, msgdata):
+    """
+    Constructs an bot reply.
+    """
+    return msgdata % (message.server.name, message.channel.name)
 
 
 class GitHubRoute:
@@ -130,3 +138,31 @@ class YTDLLogger(object):
         :return: Nothing.
         """
         self.log_setting_check('ytdl_error', msg)
+
+
+class BotPMError:
+    """
+    Class for PMing bot errors.
+    """
+    def __init__(self, bot):
+        self.bot = bot
+
+    async def resolve_send_message_error(self, ctx):
+        """
+        Resolves errors when sending messages.
+        """
+        await self.resolve_send_message_error_old(
+            ctx.message)
+
+    async def resolve_send_message_error_old(self, message):
+        """
+        Resolves errors when sending messages.
+        """
+        try:
+            await self.bot.send_message(
+                message.author,
+                content=construct_reply(
+                    message,
+                    self.bot.consoletext['error_message'][0]))
+        except discord.errors.Forbidden:
+            return
