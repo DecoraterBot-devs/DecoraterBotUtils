@@ -2,7 +2,7 @@ from setuptools import setup
 from setuptools.extension import Extension
 import sys
 
-requirements = []
+requirements = ['aiohttp']
 
 version = '0.0.1'
 

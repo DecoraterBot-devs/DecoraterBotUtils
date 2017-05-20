@@ -6,12 +6,14 @@ import os
 import sys
 
 import discord
+import aiohttp
 
 
 __all__ = ['get_plugin_full_name', 'GitHubRoute',
            'PluginData', 'YTDLLogger', 'construct_reply',
            'BotPMError', 'BotCredentialsVars', 'CreditsReader',
-           'PluginTextReader', 'PluginConfigReader']
+           'PluginTextReader', 'PluginConfigReader', 'make_version',
+           'PluginInstaller', 'ReconnectionHelper']
 
 
 def get_plugin_full_name(plugin_name):
@@ -605,3 +607,110 @@ class BotCredentialsVars(BaseCredentialsReader):
                 'api_token')  # string
         except (KeyError, TypeError):
             pass
+
+
+def make_version(pluginname, pluginversion,
+                 version=None):
+    """
+    Makes or remakes the contents to the plugin list
+    json that stores the installed versions.
+
+    Used for installing / updating plugins.
+    """
+    if version is None:
+        version = {}
+    version[pluginname] = {}
+    version[pluginname]['version'] = pluginversion
+    return version
+
+
+class PluginInstaller:
+    """
+    Class that implements all of the Plugin
+    Instalation / updating system for
+    DecoraterBot.
+    """
+    def __init__(self, connector=None, loop=None):
+        self.session = aiohttp.ClientSession(
+            connector=connector, loop=loop)
+
+    async def request_repo(self, pluginname):
+        """
+        requests the bot's plugin
+        repository for an particualar plugin.
+        """
+        url = (
+            GitHubRoute(
+                "DecoraterBot-devs", "DecoraterBot-cogs",
+                "master", "cogslist.json")).url
+        data = await self.session.get(url)
+        resp1 = await data.json(content_type='text/plain')
+        version = resp1[pluginname]['version']
+        url2 = resp1[pluginname]['downloadurl']
+        url3 = resp1[pluginname]['textjson']
+        data2 = await self.session.get(url2)
+        data3 = await self.session.get(url3)
+        plugincode = await data2.text()
+        textjson = await data3.text()
+        return PluginData(plugincode=plugincode,
+                          version=version,
+                          textjson=textjson)
+
+    async def checkupdate(self, pluginname):
+        """
+        checks a plugin provided for updates.
+        :returns: string considing of plugin's name
+        and plugin's current version.
+        """
+        pluginversion = None  # for now until this is complete.
+        requestrepo = await self.request_repo(pluginname)
+        if requestrepo.version != pluginversion:
+            # return every instance of 'PluginData'.
+            return requestrepo
+
+    async def checkupdates(self, pluginlist):
+       """
+       Checks for updates for plugins
+       in the plugin list.
+       """
+       update_list = []
+       for plugin in pluginlist:
+           update_list.append(await self.checkupdate(plugin))
+       # so bot can know which plugins have updates.
+       return update_list
+
+    async def install_plugin(self, pluginname):
+        """
+        installs a plugin provided.
+        Also gets and sets an cached
+        version of them too.
+        """
+        # TODO: Finish this.
+        pass
+
+    async def install_plugins(self, pluginlist):
+        """
+        installs all the plugins listed.
+        """
+        for pluginname in pluginlist:
+            # install each plugin individually.
+            self.install_plugin(pluginname)
+
+
+class ReconnectionHelper:
+    """
+    Helps the bot with Reconnections.
+    """
+    def __init__(self):
+        self.reconnects = 0
+
+    def reconnect_helper(self):
+        """
+        helps make the bot reconnect.
+        """
+        self.reconnects += 1
+        if self.reconnects != 0:
+            print(
+                'Bot is currently reconnecting '
+                'for %i times.' % self.reconnects)
+        return -1
