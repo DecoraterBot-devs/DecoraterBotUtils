@@ -1482,8 +1482,6 @@ class BaseClient(commands.Bot):
         return PluginConfigReader(
             file='BotBanned.json')
 
-    # Properties.
-
     @property
     def commands_list(self):
         """
@@ -1521,6 +1519,134 @@ class BaseClient(commands.Bot):
             print(str(self.consoletext['Missing_JSON_Errors'][0]))
             sys.exit(2)
         return ret
+
+    async def send(self, message=None, ctx=None,
+                   *args, **kwargs):
+        """
+        wraps send_message.
+        """
+        try:
+            await self.send_message(
+                *args, **kwargs)
+        except discord.errors.Forbidden:
+            if ctx is not None:
+                await self.BotPMError.resolve_send_message_error(
+                    ctx)
+            else:
+                await self.BotPMError.resolve_send_message_error_old(
+                    message)
+
+    def load_all_default_plugins(self):
+        """
+        Handles loading all plugins that __init__
+        used to load up.
+        """
+        self.remove_command("help")
+        for plugins_cog in self.BotConfig.default_plugins:
+            ret = self.load_plugin(plugins_cog)
+            if isinstance(ret, str):
+                print(ret)
+
+    def load_bot_extension(self, extension_full_name):
+        """
+        loads an bot extension module.
+        """
+        try:
+            self.load_extension(extension_full_name)
+        except Exception:
+            return str(traceback.format_exc())
+
+    def unload_bot_extension(self, extension_full_name):
+        """
+        unloads an bot extension module.
+        """
+        self.unload_extension(extension_full_name)
+
+    def load_plugin(self, plugin_name, raiseexec=True):
+        """
+        Loads up a plugin in the plugins folder in DecoraterBotCore.
+        """
+        pluginfullname = get_plugin_full_name(plugin_name)
+        if pluginfullname is None:
+            if raiseexec:
+                raise ImportError(
+                    "Plugin Name cannot be empty.")
+        err = self.load_bot_extension(pluginfullname)
+        if err is not None:
+            return err
+
+    def unload_plugin(self, plugin_name, raiseexec=True):
+        """
+        Unloads a plugin in the plugins folder in DecoraterBotCore.
+        """
+        pluginfullname = get_plugin_full_name(plugin_name)
+        if pluginfullname is None:
+            if raiseexec:
+                raise CogUnloadError(
+                    "Plugin Name cannot be empty.")
+        self.unload_bot_extension(pluginfullname)
+
+    def reload_plugin(self, plugin_name):
+        """
+        Reloads a plugin in the plugins folder in DecoraterBotCore.
+        """
+        self.unload_plugin(plugin_name, raiseexec=False)
+        err = self.load_plugin(plugin_name)
+        if err is not None:
+            return err
+
+    def discord_logger(self):
+        """
+        Logger Data.
+        """
+        if self.BotConfig.discord_logger:
+            self.set_up_discord_logger()
+
+    def asyncio_logger(self):
+        """
+        Asyncio Logger.
+        """
+        if self.BotConfig.asyncio_logger:
+            self.set_up_asyncio_logger()
+
+    def set_up_loggers(self, loggers=None):
+        """
+        Logs Events from discord and/or asyncio stuff.
+        """
+        if loggers is not None:
+            if loggers == 'discord':
+                logger = logging.getLogger('discord')
+                logger.setLevel(logging.DEBUG)
+                handler = logging.FileHandler(
+                    filename=os.path.join(
+                        sys.path[0], 'resources', 'Logs', 'discordpy.log'),
+                    encoding='utf-8', mode='w')
+                handler.setFormatter(logging.Formatter(
+                    '%(asctime)s:%(levelname)s:%(name)s: %(message)s'))
+                logger.addHandler(handler)
+            elif loggers == 'asyncio':
+                self.loop.set_debug(True)
+                asynciologger = logging.getLogger('asyncio')
+                asynciologger.setLevel(logging.DEBUG)
+                asynciologgerhandler = logging.FileHandler(
+                    filename=os.path.join(
+                        sys.path[0], 'resources', 'Logs', 'asyncio.log'),
+                        encoding='utf-8', mode='w')
+                asynciologgerhandler.setFormatter(logging.Formatter(
+                    '%(asctime)s:%(levelname)s:%(name)s: %(message)s'))
+                asynciologger.addHandler(asynciologgerhandler)
+
+    def set_up_discord_logger(self):
+        """
+        Sets up the Discord Logger.
+        """
+        self.set_up_loggers(loggers='discord')
+
+    def set_up_asyncio_logger(self):
+        """
+        Sets up the asyncio Logger.
+        """
+        self.set_up_loggers(loggers='asyncio')
 
     def variable(self):
         """
