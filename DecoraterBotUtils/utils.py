@@ -6,6 +6,7 @@ import os
 import sys
 
 import discord
+from discord.ext import commands
 import aiohttp
 
 
@@ -746,9 +747,8 @@ class CogLogger:
     def __init__(self, bot):
         self.bot = bot
         try:
-            self.LogDataFile = open(
-                '{0}{1}resources{1}ConfigData{1}LogData.json'.format(
-                self.bot.path, self.bot.sepa))
+            self.LogDataFile = open(os.path.join(
+                sys.path[0], 'resources', 'ConfigData', 'LogData.json'))
             self.LogData = json.load(self.LogDataFile)
             self.LogData = self.LogData[self.bot.BotConfig.language]
             self.LogDataFile.close()
@@ -773,8 +773,8 @@ class CogLogger:
                 ctx.message.author.name, desgame,
                 ctx.message.author.id)
             gmelogsservers = gmelog001
-        logfile = '{0}{1}resources{1}Logs{1}gamelog.log'.format(self.bot.path,
-                                                                self.bot.sepa)
+        logfile = os.path.join(
+            sys.path[0], 'resources', 'Logs', 'gamelog.log')
         try:
             if ctx.message.channel.is_private is True:
                 log_writter(logfile, gmelogspm)
@@ -809,8 +809,8 @@ class CogLogger:
                     message.timestamp), message.channel.server.name,
                 message.channel.name, message.content)
         if message.content is not None:
-            logfile = '{0}{1}resources{1}Logs{1}log.log'.format(
-                self.bot.path, self.bot.sepa)
+            logfile = os.path.join(
+                sys.path[0], 'resources', 'Logs', 'log.log')
             try:
                 if message.channel.is_private is True:
                     log_writter(logfile, logs001)
@@ -826,8 +826,8 @@ class CogLogger:
         :param after: Messages.
         :return: Nothing.
         """
-        logfile = '{0}{1}resources{1}Logs{1}edit_log.log'.format(
-            self.bot.path, self.bot.sepa)
+        logfile = os.path.join(
+            sys.path[0], 'resources', 'Logs', 'edit_log.log')
         editlog001 = str(self.LogData['On_Message_Logs'][0]).format(
             before.author.name, before.author.id,
             str(before.timestamp), str(before.content),
@@ -881,8 +881,8 @@ class CogLogger:
             dellogsservers = dellogs003
         if message.content is not None:
             try:
-                logfile = '{0}{1}resources{1}Logs{1}delete_log.log'.format(
-                    self.bot.path, self.bot.sepa)
+                logfile = os.path.join(
+                    sys.path[0], 'resources', 'Logs', 'delete_log.log')
                 if message.channel.is_private is True:
                     log_writter(logfile, dellogspm)
                 else:
@@ -900,8 +900,8 @@ class CogLogger:
             data = str(self.LogData['Embed_Logs'][0])
         else:
             data = str(self.LogData['Embed_Logs'][1])
-        logfile = '{0}{1}resources{1}Logs{1}embeds.log'.format(self.bot.path,
-                                                               self.bot.sepa)
+        logfile = os.path.join(
+            sys.path[0], 'resources', 'Logs', 'embeds.log')
         try:
             log_writter(logfile, data + "\n")
         except PermissionError:
@@ -995,8 +995,8 @@ class CogLogger:
             if bool(tbinfo):
                 exception_data = 'Ignoring exception caused at {0}:\n' \
                                  '{1}'.format(funcname, tbinfo)
-                logfile = '{0}{1}resources{1}Logs{1}error_log.log'.format(
-                    self.bot.path, self.bot.sepa)
+                logfile = os.path.join(
+                    sys.path[0], 'resources', 'Logs', 'error_log.log')
                 try:
                     log_writter(logfile, exception_data)
                 except PermissionError:
@@ -1019,8 +1019,8 @@ class CogLogger:
         ban_log_data = str(self.LogData['Ban_Logs'][0]).format(mem_name,
                                                                mem_id, mem_dis,
                                                                mem_svr_name)
-        logfile = '{0}{1}resources{1}Logs{1}bans.log'.format(self.bot.path,
-                                                             self.bot.sepa)
+        logfile = os.path.join(
+            sys.path[0], 'resources', 'Logs', 'bans.log')
         log_writter(logfile, ban_log_data)
 
     async def send_ban_logs(self, channel, member):
@@ -1045,8 +1045,8 @@ class CogLogger:
         """
         available_log_data = str(
             self.LogData['On_Server_Available'][0]).format(server)
-        logfile = '{0}{1}resources{1}Logs{1}available_servers.log'.format(
-            self.bot.path, self.bot.sepa)
+        logfile = os.path.join(
+            sys.path[0], 'resources', 'Logs', 'available_servers.log')
         log_writter(logfile, available_log_data)
 
     def onunavailable(self, server):
@@ -1057,8 +1057,8 @@ class CogLogger:
         """
         unavailable_log_data = str(
             self.LogData['On_Server_Unavailable'][0]).format(server)
-        logfile = '{0}{1}resources{1}Logs{1}unavailable_servers.log'.format(
-            self.bot.path, self.bot.sepa)
+        logfile = os.path.join(
+            sys.path[0], 'resources', 'Logs', 'unavailable_servers.log')
         log_writter(logfile, unavailable_log_data)
 
     def onunban(self, server, user):
@@ -1071,8 +1071,8 @@ class CogLogger:
         unban_log_data = str(self.LogData['Unban_Logs'][0]
                              ).format(user.name, user.id, user.discriminator,
                                       server.name)
-        logfile = '{0}{1}resources{1}Logs{1}unbans.log'.format(self.bot.path,
-                                                               self.bot.sepa)
+        logfile = os.path.join(
+            sys.path[0], 'resources', 'Logs', 'unbans.log')
         log_writter(logfile, unban_log_data)
 
     async def send_unban_logs(self, channel, user):
@@ -1102,8 +1102,8 @@ class CogLogger:
         mem_channel_name = channel.name
         group_join_log_data = str(self.LogData['Group_Join_Logs'][0]).format(
             mem_name, mem_id, mem_dis, mem_channel_name)
-        logfile = '{0}{1}resources{1}Logs{1}group_join.log'.format(
-            self.bot.path, self.bot.sepa)
+        logfile = os.path.join(
+            sys.path[0], 'resources', 'Logs', 'group_join.log')
         log_writter(logfile, group_join_log_data)
 
     def ongroupremove(self, channel, user):
@@ -1119,8 +1119,8 @@ class CogLogger:
         mem_channel_name = channel.name
         group_remove_log_data = str(self.LogData['Group_Remove_Logs'][0]).format(
             mem_name, mem_id, mem_dis, mem_channel_name)
-        logfile = '{0}{1}resources{1}Logs{1}group_remove.log'.format(
-            self.bot.path, self.bot.sepa)
+        logfile = os.path.join(
+            sys.path[0], 'resources', 'Logs', 'group_remove.log')
         log_writter(logfile, group_remove_log_data)
 
     def ontyping(self, channel, user, when):
@@ -1134,8 +1134,8 @@ class CogLogger:
         typing_log_data = str(self.LogData['On_typing'][0]).format(
             user.name, user.id, user.discriminator, channel.name,
             str(when))
-        logfile = '{0}{1}resources{1}Logs{1}typing.log'.format(
-            self.bot.path, self.bot.sepa)
+        logfile = os.path.join(
+            sys.path[0], 'resources', 'Logs', 'typing.log')
         log_writter(logfile, typing_log_data)
 
     def onvoicestateupdate(self, before, after):
@@ -1153,8 +1153,8 @@ class CogLogger:
         voice_update_log_data = str(self.LogData['voice_update'][0]).format(
             mem_name, mem_id, mem_dis, before_channel_name,
             after_channel_name)
-        logfile = '{0}{1}resources{1}Logs{1}voice_update.log'.format(
-            self.bot.path, self.bot.sepa)
+        logfile = os.path.join(
+            sys.path[0], 'resources', 'Logs', 'voice_update.log')
         log_writter(logfile, voice_update_log_data)
 
     def onchanneldelete(self, channel):
@@ -1164,8 +1164,8 @@ class CogLogger:
         """
         channel_delete_log_data = str(self.LogData['channel_delete'][0]).format(
             channel.name, channel.id)
-        logfile = '{0}{1}resources{1}Logs{1}channel_delete.log'.format(
-            self.bot.path, self.bot.sepa)
+        logfile = os.path.join(
+            sys.path[0], 'resources', 'Logs', 'channel_delete.log')
         log_writter(logfile, channel_delete_log_data)
 
     def onchannelcreate(self, channel):
@@ -1175,8 +1175,8 @@ class CogLogger:
         """
         channel_create_log_data = str(self.LogData['channel_create'][0]).format(
             channel.name, channel.id)
-        logfile = '{0}{1}resources{1}Logs{1}channel_create.log'.format(
-            self.bot.path, self.bot.sepa)
+        logfile = os.path.join(
+            sys.path[0], 'resources', 'Logs', 'channel_create.log')
         log_writter(logfile, channel_create_log_data)
 
     def onchannelupdate(self, before, after):
@@ -1189,8 +1189,8 @@ class CogLogger:
         # change of permittions trigger this???
         channel_update_log_data = str(self.LogData['channel_update'][0]).format(
             before.name, before.id, after.name)
-        logfile = '{0}{1}resources{1}Logs{1}channel_update.log'.format(
-            self.bot.path, self.bot.sepa)
+        logfile = os.path.join(
+            sys.path[0], '{0}{1}resources{1}Logs{1}channel_update.log')
         log_writter(logfile, channel_update_log_data)
 
     def onmemberupdate(self, before, after):
@@ -1203,8 +1203,8 @@ class CogLogger:
         # change of permittions trigger this???
         member_update_log_data = str(self.LogData['member_update'][0]).format(
             before.name, before.id, after.name)
-        logfile = '{0}{1}resources{1}Logs{1}member_update.log'.format(
-            self.bot.path, self.bot.sepa)
+        logfile = os.path.join(
+            sys.path[0], 'resources', 'Logs', 'member_update.log')
         log_writter(logfile, member_update_log_data)
 
     def onserverjoin(self, server):
@@ -1215,8 +1215,8 @@ class CogLogger:
         """
         server_join_log_data = str(self.LogData['server_join'][0]).format(
             self.bot.user.name, self.bot.user.id, server.name)
-        logfile = '{0}{1}resources{1}Logs{1}server_join.log'.format(
-            self.bot.path, self.bot.sepa)
+        logfile = os.path.join(
+            sys.path[0], 'resources', 'Logs', 'server_join.log')
         log_writter(logfile, server_join_log_data)
 
     def onserverremove(self, server):
@@ -1227,8 +1227,8 @@ class CogLogger:
         """
         server_remove_log_data = str(self.LogData['server_remove'][0]).format(
             self.bot.user.name, self.bot.user.id, server.name)
-        logfile = '{0}{1}resources{1}Logs{1}server_remove.log'.format(
-            self.bot.path, self.bot.sepa)
+        logfile = os.path.join(
+            sys.path[0], 'resources', 'Logs', 'server_remove.log')
         log_writter(logfile, server_remove_log_data)
 
     def onserverupdate(self, before, after):
@@ -1240,8 +1240,8 @@ class CogLogger:
         """
         server_update_log_data = str(self.LogData['server_update'][0]).format(
             before.name, before.id, after.name)
-        logfile = '{0}{1}resources{1}Logs{1}server_update.log'.format(
-            self.bot.path, self.bot.sepa)
+        logfile = os.path.join(
+            sys.path[0], 'resources', 'Logs', 'server_update.log')
         log_writter(logfile, server_update_log_data)
 
     def onserverrolecreate(self, role):
@@ -1252,8 +1252,8 @@ class CogLogger:
         """
         role_create_log_data = str(self.LogData['role_create'][0]).format(
             role.name, role.id)
-        logfile = '{0}{1}resources{1}Logs{1}role_create.log'.format(
-            self.bot.path, self.bot.sepa)
+        logfile = os.path.join(
+            sys.path[0], 'resources', 'Logs', 'role_create.log')
         log_writter(logfile, role_create_log_data)
 
     def onserverroledelete(self, role):
@@ -1264,8 +1264,8 @@ class CogLogger:
         """
         role_delete_log_data = str(self.LogData['role_delete'][0]).format(
             role.name, role.id)
-        logfile = '{0}{1}resources{1}Logs{1}role_delete.log'.format(
-            self.bot.path, self.bot.sepa)
+        logfile = os.path.join(
+            sys.path[0], 'resources', 'Logs', 'role_delete.log')
         log_writter(logfile, role_delete_log_data)
 
     def onserverroleupdate(self, before, after):
@@ -1278,8 +1278,8 @@ class CogLogger:
         # change of permittions trigger this???
         role_update_log_data = str(self.LogData['role_update'][0]).format(
             before.name, before.id, after.name)
-        logfile = '{0}{1}resources{1}Logs{1}role_update.log'.format(
-            self.bot.path, self.bot.sepa)
+        logfile = os.path.join(
+            sys.path[0], 'resources', 'Logs', 'role_update.log')
         log_writter(logfile, role_update_log_data)
 
     def onsocketrawreceive(self, msg):
@@ -1290,8 +1290,8 @@ class CogLogger:
         """
         raw_receive_log_data = str(self.LogData['raw_receive'][0]).format(
             msg)
-        logfile = '{0}{1}resources{1}Logs{1}raw_receive.log'.format(
-            self.bot.path, self.bot.sepa)
+        logfile = os.path.join(
+            sys.path[0], 'resources', 'Logs', 'raw_receive.log')
         log_writter(logfile, raw_receive_log_data)
 
     def onsocketrawsend(self, payload):
@@ -1302,8 +1302,8 @@ class CogLogger:
         """
         raw_send_log_data = str(self.LogData['raw_send'][0]).format(
             payload)
-        logfile = '{0}{1}resources{1}Logs{1}raw_send.log'.format(
-            self.bot.path, self.bot.sepa)
+        logfile = os.path.join(
+            sys.path[0], 'resources', 'Logs', 'raw_send.log')
         log_writter(logfile, raw_send_log_data)
 
     def onresumed(self):
@@ -1312,8 +1312,8 @@ class CogLogger:
         :return: Nothing.
         """
         resumed_log_data = str(self.LogData['resumed'][0])
-        logfile = '{0}{1}resources{1}Logs{1}resumed.log'.format(
-            self.bot.path, self.bot.sepa)
+        logfile = os.path.join(
+            sys.path[0], 'resources', 'Logs', 'resumed.log')
         log_writter(logfile, resumed_log_data)
 
     def onserveremojisupdate(self, before, after):
@@ -1327,8 +1327,8 @@ class CogLogger:
             self.LogData['server_emojis_update'][0]).format(
             before.name, before.id, before.server.name,
             after.name)
-        logfile = '{0}{1}resources{1}Logs{1}server_emojis_update.log'.format(
-            self.bot.path, self.bot.sepa)
+        logfile = os.path.join(
+            sys.path[0], 'resources', 'Logs', 'server_emojis_update.log')
         log_writter(logfile, server_emojis_update_log_data)
 
     def onreactionadd(self, reaction, user):
@@ -1342,8 +1342,8 @@ class CogLogger:
             self.LogData['reaction_add'][0]).format(
             user.name, user.id, user.server, reaction.emoji.name,
             reaction.emoji.id, reaction.emoji.server.name)
-        logfile = '{0}{1}resources{1}Logs{1}reaction_add.log'.format(
-            self.bot.path, self.bot.sepa)
+        logfile = os.path.join(
+            sys.path[0], 'resources', 'Logs', 'reaction_add.log')
         log_writter(logfile, reaction_add_log_data)
 
     def onreactionremove(self, reaction, user):
@@ -1357,8 +1357,8 @@ class CogLogger:
             self.LogData['reaction_remove'][0]).format(
             user.name, user.id, user.server, reaction.emoji.name,
             reaction.emoji.id, reaction.emoji.server.name)
-        logfile = '{0}{1}resources{1}Logs{1}reaction_remove.log'.format(
-            self.bot.path, self.bot.sepa)
+        logfile = os.path.join(
+            sys.path[0], 'resources', 'Logs', 'reaction_remove.log')
         log_writter(logfile, reaction_remove_log_data)
 
     def onreactionclear(self, message, reactions):
@@ -1378,8 +1378,8 @@ class CogLogger:
             self.LogData['reaction_clear'][0]).format(
             message.author.name, message.author.id, message.author.server,
             reactionnames, reactionids, reactionservers)
-        logfile = '{0}{1}resources{1}Logs{1}reaction_clear.log'.format(
-            self.bot.path, self.bot.sepa)
+        logfile = os.path.join(
+            sys.path[0], 'resources', 'Logs', 'reaction_clear.log')
         log_writter(logfile, reaction_clear_log_data)
 
     def onmemberjoin(self, member):
@@ -1391,8 +1391,8 @@ class CogLogger:
         member_join_log_data = str(self.LogData['member_join'][0]).format(
             member.name, member.id, member.discriminator,
             member.server.name)
-        logfile = '{0}{1}resources{1}Logs{1}member_join.log'.format(
-            self.bot.path, self.bot.sepa)
+        logfile = os.path.join(
+            sys.path[0], 'resources', 'Logs', 'member_join.log')
         log_writter(logfile, member_join_log_data)
 
     def onkick(self, member):
@@ -1409,21 +1409,22 @@ class CogLogger:
                                                                  mem_id,
                                                                  mem_dis,
                                                                  mem_svr_name)
-        logfile = '{0}{1}resources{1}Logs{1}kicks.log'.format(self.bot.path,
-                                                              self.bot.sepa)
+        logfile = os.path.join(
+            sys.path[0], 'resources', 'Logs', 'kicks.log')
         log_writter(logfile, kick_log_data)
 
 
 config = BotCredentialsVars()
 
 
-class PropertyContainer:
+class PropertyContainer(commands.Bot):
     """
     Contains the properties that gets
     bound to the Bot's main client class.
     """
-    def __init__(self):
+    def __init__(self, **kwargs):
         self._start = time.time()
+        super(PropertyContainer, self).__init__(**kwargs)
 
     @property
     def version(self):
@@ -1460,6 +1461,18 @@ class PropertyContainer:
         return PluginConfigReader(
             file='BotBanned.json')
 
+    # Properties.
+
+    @property
+    def commands_list(self):
+        """
+        retrieves a list of all of the bot's registered commands.
+        """
+        plugin_list = []
+        for command in self.commands:
+            plugin_list.append(command)
+        return plugin_list
+
     @property
     def uptime_count_begin(self):
         """
@@ -1489,13 +1502,13 @@ class PropertyContainer:
         return ret
 
 
-class ContainerOfOtherStuff:
+class ContainerOfOtherStuff(PropertyContainer):
     """
     Container of Useless stuff.
     """
     logged_in = False
 
-    def __init__(self):
+    def __init__(self, **kwargs):
         self.logged_in_ = ContainerOfOtherStuff.logged_in
         self.somebool = False
         self.reload_normal_commands = False
@@ -1513,6 +1526,7 @@ class ContainerOfOtherStuff:
         self.payload = {}
         self.header = {}
         self.is_bot_logged_in = False
+        super(ContainerOfOtherStuff, self).__init__(**kwargs)
 
     def variable(self):
         """
