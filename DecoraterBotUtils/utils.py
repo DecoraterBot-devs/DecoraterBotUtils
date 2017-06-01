@@ -15,7 +15,8 @@ __all__ = [
     'BotPMError', 'BotCredentialsVars', 'CreditsReader',
     'PluginTextReader', 'PluginConfigReader', 'make_version',
     'PluginInstaller', 'ReconnectionHelper', 'log_writter',
-    'CogLogger']
+    'CogLogger', 'config', 'PropertyContainer',
+    'ContainerOfOtherStuff']
 
 
 def get_plugin_full_name(plugin_name):
@@ -1411,3 +1412,114 @@ class CogLogger:
         logfile = '{0}{1}resources{1}Logs{1}kicks.log'.format(self.bot.path,
                                                               self.bot.sepa)
         log_writter(logfile, kick_log_data)
+
+
+config = BotCredentialsVars()
+
+
+class PropertyContainer:
+    """
+    Contains the properties that gets
+    bound to the Bot's main client class.
+    """
+    def __init__(self):
+        self._start = time.time()
+
+    @property
+    def version(self):
+        """
+        returns the bot's version number.
+        """
+        return self.consoletext['WindowVersion'][0]
+
+    @property
+    def BotConfig(self):
+        """
+        Reads the bot's config data.
+        """
+        type(self)
+        return config
+
+    @property
+    def consoletext(self):
+        """
+        returns the bot's
+        console text.
+        """
+        consoledata = PluginConfigReader(file='ConsoleWindow.json')
+        consoledata = consoledata[self.BotConfig.language]
+        return consoledata
+
+    @property
+    def banlist(self):
+        """
+        returns the list of users banned
+        from using the bot.
+        """
+        type(self)
+        return PluginConfigReader(
+            file='BotBanned.json')
+
+    @property
+    def uptime_count_begin(self):
+        """
+        returns the begin time.
+        """
+        return self._start
+
+    @property
+    def credits(self):
+        """
+        returns the stuff that the Credits reader returns.
+        """
+        type(self)
+        return CreditsReader(file="credits.json")
+
+    @property
+    def ignoreslist(self):
+        """
+        returns the current ignores list.
+        """
+        try:
+            ret = PluginConfigReader(file='IgnoreList.json')
+        except FileNotFoundError:
+            ret = None
+            print(str(self.consoletext['Missing_JSON_Errors'][0]))
+            sys.exit(2)
+        return ret
+
+
+class ContainerOfOtherStuff:
+    """
+    Container of Useless stuff.
+    """
+    logged_in = False
+
+    def __init__(self):
+        self.logged_in_ = ContainerOfOtherStuff.logged_in
+        self.somebool = False
+        self.reload_normal_commands = False
+        self.reload_voice_commands = False
+        self.reload_reason = None
+        self.initial_rejoin_voice_channel = True
+        self.desmod = None
+        self.desmod_new = None
+        self.rejoin_after_reload = False
+        self.sent_prune_error_message = False
+        self.tinyurlerror = False
+        self.link = None
+        self.member_list = []
+        self.hook_url = None
+        self.payload = {}
+        self.header = {}
+        self.is_bot_logged_in = False
+
+    def variable(self):
+        """
+        Function that makes Certain things on the
+        on_ready event only happen 1
+        time only. (e.g. the logged in printing stuff)
+        """
+        if not ContainerOfOtherStuff.logged_in:
+            ContainerOfOtherStuff.logged_in = True
+            self.logged_in_ = True
