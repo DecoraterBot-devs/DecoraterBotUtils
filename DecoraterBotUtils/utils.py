@@ -1428,7 +1428,7 @@ class BaseClient(commands.Bot):
         self._start = time.time()
         self.BotPMError = BotPMError(self)
         self._rec = ReconnectionHelper()
-        self.logged_in_ = ContainerOfOtherStuff.logged_in
+        self.logged_in_ = BaseClient.logged_in
         self.somebool = False
         self.reload_normal_commands = False
         self.reload_voice_commands = False
