@@ -17,8 +17,7 @@ __all__ = [
     'BotPMError', 'BotCredentialsVars', 'CreditsReader',
     'PluginTextReader', 'PluginConfigReader', 'make_version',
     'PluginInstaller', 'ReconnectionHelper', 'log_writter',
-    'CogLogger', 'config', 'PropertyContainer',
-    'ContainerOfOtherStuff']
+    'CogLogger', 'config', 'BaseClient']
 
 
 def get_plugin_full_name(plugin_name):
@@ -1418,14 +1417,35 @@ class CogLogger:
 config = BotCredentialsVars()
 
 
-class PropertyContainer(commands.Bot):
+class BaseClient(commands.Bot):
     """
-    Contains the properties that gets
+    Contains the stuff that gets
     bound to the Bot's main client class.
     """
+    logged_in = False
+
     def __init__(self, **kwargs):
         self._start = time.time()
-        super(PropertyContainer, self).__init__(**kwargs)
+        self.BotPMError = BotPMError(self)
+        self._rec = ReconnectionHelper()
+        self.logged_in_ = ContainerOfOtherStuff.logged_in
+        self.somebool = False
+        self.reload_normal_commands = False
+        self.reload_voice_commands = False
+        self.reload_reason = None
+        self.initial_rejoin_voice_channel = True
+        self.desmod = None
+        self.desmod_new = None
+        self.rejoin_after_reload = False
+        self.sent_prune_error_message = False
+        self.tinyurlerror = False
+        self.link = None
+        self.member_list = []
+        self.hook_url = None
+        self.payload = {}
+        self.header = {}
+        self.is_bot_logged_in = False
+        super(BaseClient, self).__init__(**kwargs)
 
     @property
     def version(self):
@@ -1502,39 +1522,12 @@ class PropertyContainer(commands.Bot):
             sys.exit(2)
         return ret
 
-
-class ContainerOfOtherStuff(PropertyContainer):
-    """
-    Container of Useless stuff.
-    """
-    logged_in = False
-
-    def __init__(self, **kwargs):
-        self.logged_in_ = ContainerOfOtherStuff.logged_in
-        self.somebool = False
-        self.reload_normal_commands = False
-        self.reload_voice_commands = False
-        self.reload_reason = None
-        self.initial_rejoin_voice_channel = True
-        self.desmod = None
-        self.desmod_new = None
-        self.rejoin_after_reload = False
-        self.sent_prune_error_message = False
-        self.tinyurlerror = False
-        self.link = None
-        self.member_list = []
-        self.hook_url = None
-        self.payload = {}
-        self.header = {}
-        self.is_bot_logged_in = False
-        super(ContainerOfOtherStuff, self).__init__(**kwargs)
-
     def variable(self):
         """
         Function that makes Certain things on the
         on_ready event only happen 1
         time only. (e.g. the logged in printing stuff)
         """
-        if not ContainerOfOtherStuff.logged_in:
-            ContainerOfOtherStuff.logged_in = True
+        if not BaseClient.logged_in:
+            BaseClient.logged_in = True
             self.logged_in_ = True
