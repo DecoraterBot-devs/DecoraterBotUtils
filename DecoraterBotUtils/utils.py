@@ -6,12 +6,15 @@ import time
 import os
 import sys
 import traceback
+import asyncio
 
 import consolechange
 import dbapi
 import discord
 from discord.ext import commands
 import aiohttp
+
+from .BotErrors import *
 
 
 __all__ = [
@@ -20,7 +23,7 @@ __all__ = [
     'BotPMError', 'BotCredentialsVars', 'CreditsReader',
     'PluginTextReader', 'PluginConfigReader', 'make_version',
     'PluginInstaller', 'ReconnectionHelper', 'log_writter',
-    'CogLogger', 'config', 'BaseClient']
+    'CogLogger', 'config', 'BaseClient', 'TinyURLContainer']
 
 
 def get_plugin_full_name(plugin_name):
@@ -1446,6 +1449,9 @@ class BaseClient(commands.Bot):
         super(BaseClient, self).__init__(**kwargs)
         self.dbapi = dbapi.DBAPI(self, self.BotConfig.api_token)
         self.BotPMError = BotPMError(self)
+        self.resolve_send_message_error = (
+            self.BotPMError.resolve_send_message_error)
+        self.call_all()
 
     @property
     def version(self):
@@ -1673,6 +1679,71 @@ class BaseClient(commands.Bot):
         type(self)
         consolechange.consolesize(80, 23)
 
+    def call_all(self):
+        """
+        calls all functions that __init__ used to
+        call except for super.
+        """
+        self.asyncio_logger()
+        self.discord_logger()
+        self.changewindowtitle()
+        # if self.BotConfig.change_console_size:
+        #    self.changewindowsize()
+        self.load_all_default_plugins()
+        self.variable()
+        self.login_helper()
+
+    def login_helper(self):
+        """
+        Bot Login Helper.
+        """
+        while True:
+            ret = self.login_info()
+            if ret is not None and ret is not -1:
+                break
+
+    def login_info(self):
+        """
+        Allows the bot to Connect / Reconnect.
+        :return: Nothing or -1/-2 on failure.
+        """
+        if self.credentials_check:
+            try:
+                if self.BotConfig.bot_token is not None:
+                    self.is_bot_logged_in = True
+                    self.loop.run_until_complete(self.start(
+                        self.BotConfig.bot_token))
+            except discord.errors.GatewayNotFound:
+                print(str(self.consoletext['Login_Gateway_No_Find'][0]))
+                return -2
+            except discord.errors.LoginFailure as e:
+                if str(e) == "Improper credentials have been passed.":
+                    print(str(self.consoletext['Login_Failure'][0]))
+                    return -2
+                elif str(e) == "Improper token has been passed.":
+                    print(str(self.consoletext['Invalid_Token'][0]))
+                    return -2
+            except TypeError:
+                pass
+            except KeyboardInterrupt:
+                pass
+            except asyncio.futures.InvalidStateError:
+                return self._rec.reconnect_helper()
+            except aiohttp.ClientResponseError:
+                return self._rec.reconnect_helper()
+            except aiohttp.ClientOSError:
+                return self._rec.reconnect_helper()
+            except RuntimeError:
+                self.http.recreate()
+            if self.is_bot_logged_in:
+                if not self.is_logged_in:
+                    pass
+                else:
+                    return self._rec.reconnect_helper()
+        else:
+            print(str(self.consoletext['Credentials_Not_Found'][0]))
+            return -2
+
     def variable(self):
         """
         Function that makes Certain things on the
@@ -1682,3 +1753,21 @@ class BaseClient(commands.Bot):
         if not BaseClient.logged_in:
             BaseClient.logged_in = True
             self.logged_in_ = True
+
+
+class TinyURLContainer:
+    """
+    handles all the TinyURL stuff,
+    """
+    def __init__(self, TinyURL):
+        self.TinyURL = TinyURL
+        self.link = link
+        # holds the bool to the errors.
+        self.tinyurlerror
+
+    def create_one(self, url):
+        """
+        creates an shortened url.
+        """
+        self.link = str(
+            self.TinyURL.create_one(url))
