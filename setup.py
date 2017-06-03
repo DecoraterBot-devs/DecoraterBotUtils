@@ -2,7 +2,13 @@ from setuptools import setup
 from setuptools.extension import Extension
 import sys
 
-requirements = ['aiohttp']
+requirements = []
+try:
+    with open('requirements.txt') as f:
+        requirements = f.read().splitlines()
+except Exception as ex:
+    with open('DecoraterBotUtils.egg-info\requires.txt') as f:
+        requirements = f.read().splitlines()
 
 version = '0.0.1'
 
