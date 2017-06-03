@@ -1428,9 +1428,7 @@ class BaseClient(commands.Bot):
     logged_in = False
 
     def __init__(self, **kwargs):
-        self.dbapi = dbapi.DBAPI(self, self.BotConfig.api_token)
         self._start = time.time()
-        self.BotPMError = BotPMError(self)
         self._rec = ReconnectionHelper()
         self.logged_in_ = BaseClient.logged_in
         self.somebool = False
@@ -1446,6 +1444,8 @@ class BaseClient(commands.Bot):
         self.tinyurlerror = False
         self.is_bot_logged_in = False
         super(BaseClient, self).__init__(**kwargs)
+        self.dbapi = dbapi.DBAPI(self, self.BotConfig.api_token)
+        self.BotPMError = BotPMError(self)
 
     @property
     def version(self):
