@@ -5,7 +5,9 @@ import json
 import time
 import os
 import sys
+import traceback
 
+import consolechange
 import discord
 from discord.ext import commands
 import aiohttp
@@ -1520,6 +1522,16 @@ class BaseClient(commands.Bot):
             sys.exit(2)
         return ret
 
+    @property
+    def credentials_check(self):
+        """
+        Checks if the Credentials.json
+        file exists.
+        """
+        PATH = os.path.join(
+            sys.path[0], 'resources', 'ConfigData', 'Credentials.json')
+        return os.path.isfile(PATH) and os.access(PATH, os.R_OK)
+
     async def send(self, message=None, ctx=None,
                    *args, **kwargs):
         """
@@ -1647,6 +1659,21 @@ class BaseClient(commands.Bot):
         Sets up the asyncio Logger.
         """
         self.set_up_loggers(loggers='asyncio')
+
+    def changewindowtitle(self):
+        """
+        Changes the console's window Title.
+        """
+        consolechange.consoletitle(
+            self.consoletext['WindowName'][0] + self.version)
+
+    def changewindowsize(self):
+        """
+        Changes the Console's size.
+        """
+        # not used but avoids issues with this being an classmethod.
+        type(self)
+        consolechange.consolesize(80, 23)
 
     def variable(self):
         """
