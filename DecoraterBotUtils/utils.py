@@ -1443,12 +1443,11 @@ class BaseClient(commands.Bot):
         self.desmod_new = None
         self.rejoin_after_reload = False
         self.sent_prune_error_message = False
-        # Deprecated.
-        self.tinyurlerror = False
         self.is_bot_logged_in = False
         super(BaseClient, self).__init__(**kwargs)
         self.dbapi = dbapi.DBAPI(self, self.BotConfig.api_token)
         self.BotPMError = BotPMError(self)
+        # Deprecated.
         self.resolve_send_message_error = (
             self.BotPMError.resolve_send_message_error)
         self.call_all()
@@ -1761,9 +1760,9 @@ class TinyURLContainer:
     """
     def __init__(self, TinyURL):
         self.TinyURL = TinyURL
-        self.link = link
+        self.link = ""
         # holds the bool to the errors.
-        self.tinyurlerror
+        self.tinyurlerror = False
 
     def create_one(self, url):
         """
