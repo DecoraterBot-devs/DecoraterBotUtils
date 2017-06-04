@@ -79,13 +79,14 @@ class YTDLLogger(object):
         :param msg: message.
         :return: Nothing.
         """
+        type(self)
         if meth is not '':
             if meth == 'ytdl_debug':
                 logfile = os.path.join(
                     sys.path[0], 'resources', 'Logs',
                     'ytdl_debug_logs.log')
                 try:
-                    self.bot.DBLogs.log_writter(logfile, msg + '\n')
+                    log_writter(logfile, msg + '\n')
                 except PermissionError:
                     return
             elif meth == 'ytdl_warning':
@@ -93,7 +94,7 @@ class YTDLLogger(object):
                     sys.path[0], 'resources', 'Logs',
                     'ytdl_warning_logs.log')
                 try:
-                    self.bot.DBLogs.log_writter(logfile2, msg + '\n')
+                    log_writter(logfile2, msg + '\n')
                 except PermissionError:
                     return
             elif meth == 'ytdl_error':
@@ -101,7 +102,7 @@ class YTDLLogger(object):
                     sys.path[0], 'resources', 'Logs',
                     'ytdl_error_logs.log')
                 try:
-                    self.bot.DBLogs.log_writter(logfile3, msg + '\n')
+                    log_writter(logfile3, msg + '\n')
                 except PermissionError:
                     return
             elif meth == 'ytdl_info':
@@ -109,7 +110,7 @@ class YTDLLogger(object):
                     sys.path[0], 'resources', 'Logs',
                     'ytdl_info_logs.log')
                 try:
-                    self.bot.DBLogs.log_writter(logfile4, msg + '\n')
+                    log_writter(logfile4, msg + '\n')
                 except PermissionError:
                     return
         else:
