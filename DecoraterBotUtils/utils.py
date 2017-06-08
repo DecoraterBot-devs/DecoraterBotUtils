@@ -1733,6 +1733,9 @@ class BaseClient(commands.Bot):
                 return self._rec.reconnect_helper()
             except aiohttp.ClientOSError:
                 return self._rec.reconnect_helper()
+            except aiohttp.client_exceptions.ServerDisconnectedError:
+                # ffs aiohttp...
+                return self._rec.reconnect_helper()
             except RuntimeError:
                 self.http.recreate()
             if self.is_bot_logged_in:
