@@ -1727,17 +1727,10 @@ class BaseClient(commands.Bot):
                 pass
             except KeyboardInterrupt:
                 pass
-            except asyncio.futures.InvalidStateError:
-                return self._rec.reconnect_helper()
-            except aiohttp.ClientResponseError:
-                return self._rec.reconnect_helper()
-            except aiohttp.ClientOSError:
-                return self._rec.reconnect_helper()
-            except aiohttp.client_exceptions.ServerDisconnectedError:
-                # ffs aiohttp...
-                return self._rec.reconnect_helper()
             except RuntimeError:
                 self.http.recreate()
+            except Exception:  # catch all other exceptions.
+                return self._rec.reconnect_helper()
             if self.is_bot_logged_in:
                 if not self.is_logged_in:
                     pass
