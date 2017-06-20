@@ -2,7 +2,7 @@ regex
 aioredis
 colorama
 pycares
-discord.py
+discord.py < 1.0.0a
 aiohttp
 PyNacl
 cchardet
