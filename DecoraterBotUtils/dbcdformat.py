@@ -37,7 +37,8 @@ class Result:
 
     def to_json(self):
         """ ... """
-        return json.loads(self.data)
+        if self.data is not None:
+            return json.loads(self.data)
 
     def dump(self, filename, dbcdfile, jsondata):
         """ ... """
@@ -179,6 +180,7 @@ def reader_main(filename, dbcdfile, write=False):
                     file_object.write(entry_file_data)
     except FileNotFoundError:
         pass
+    return Result(None)
 
 
 def writer_main(in_path, out_path):
