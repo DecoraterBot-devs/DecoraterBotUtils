@@ -119,33 +119,36 @@ def reader_main(filename, dbcdfile):
     :param argv: Arguments.
     :return: Nothing.
     """
-    with open(dbcdfile, 'rb') as file_object:
-        file_data = file_object.read()
-    offset = 0
-    # version = struct.unpack_from(b'<26s26x', file_data, offset)[0]
-    offset += 60
-    entry_count = struct.unpack_from(b'<I4x', file_data, offset)[0]
-    offset += 12
-    # file_timer = struct.unpack_from(b'<I', file_data, offset)[0]
-    offset += 4
-    xml_size_file = struct.unpack_from(b'<I', file_data, offset)[0]
-    offset += 4
-    theunpack_offset = offset + xml_size_file
-    with open(dbcdfile, 'rb') as crc_reader:
-        crc_reader.seek(offset)
-        crc_data = crc_reader.read(xml_size_file)
-    with open("crc.xml", 'wb') as crc_creator:
-        crc_creator.write(crc_data)
-    with open("crc.xml") as crc_reader:
-        crc_er = parse(crc_reader)
-    os.remove("crc.xml")
-    entries, relative_offseterr = make_entries(crc_er, entry_count)
-    for entry in entries:
-        entry_file_data = (file_data[theunpack_offset + entry.relative_offset:theunpack_offset +
-                           entry.relative_offset + entry.compressed_size])
-        entry_file_data = zlib.decompress(entry_file_data)
-        if entry.name == filename:
-            return entry_file_data.decode('utf-8')
+    try:
+        with open(dbcdfile, 'rb') as file_object:
+            file_data = file_object.read()
+        offset = 0
+        # version = struct.unpack_from(b'<26s26x', file_data, offset)[0]
+        offset += 60
+        entry_count = struct.unpack_from(b'<I4x', file_data, offset)[0]
+        offset += 12
+        # file_timer = struct.unpack_from(b'<I', file_data, offset)[0]
+        offset += 4
+        xml_size_file = struct.unpack_from(b'<I', file_data, offset)[0]
+        offset += 4
+        theunpack_offset = offset + xml_size_file
+        with open(dbcdfile, 'rb') as crc_reader:
+            crc_reader.seek(offset)
+            crc_data = crc_reader.read(xml_size_file)
+        with open("crc.xml", 'wb') as crc_creator:
+            crc_creator.write(crc_data)
+        with open("crc.xml") as crc_reader:
+            crc_er = parse(crc_reader)
+        os.remove("crc.xml")
+        entries, relative_offseterr = make_entries(crc_er, entry_count)
+        for entry in entries:
+            entry_file_data = (file_data[theunpack_offset + entry.relative_offset:theunpack_offset +
+                               entry.relative_offset + entry.compressed_size])
+            entry_file_data = zlib.decompress(entry_file_data)
+            if entry.name == filename:
+                return entry_file_data.decode('utf-8')
+    except FileNotFoundError:
+        pass
 
 
 def packer_main(argv):
