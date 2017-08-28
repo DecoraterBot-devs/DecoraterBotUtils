@@ -222,8 +222,8 @@ class BaseConfigReader:
         dbcd_file = os.path.join(
             sys.path[0], 'resources', 'ConfigData',
             'config.dbcd')
-        self.file = reader_main(self.filename, dbcd_file).to_json()
-        if self.file is None:
+        self.config = reader_main(self.filename, dbcd_file).to_json()
+        if self.config is None:
             # go to old load.
             self._load()
 
@@ -1480,7 +1480,7 @@ class BaseClient(commands.Bot):
         returns the bot's
         console text.
         """
-        consoledata = BaseConfigReader(file='ConsoleWindow.json').file
+        consoledata = BaseConfigReader(file='ConsoleWindow.json').config
         consoledata = consoledata[self.BotConfig.language]
         return consoledata
 
@@ -1695,7 +1695,7 @@ class BaseClient(commands.Bot):
         :return: Nothing or -1/-2 on failure.
         """
         _continue = False
-        if self.BotConfig.file is None:
+        if self.BotConfig.config is None:
             if self.credentials_check:
                 _continue = True
             else:
@@ -1705,6 +1705,8 @@ class BaseClient(commands.Bot):
             _continue = True
         if _continue:
             try:
+                # debug for now.
+                print(self.BotConfig.bot_token)
                 if self.BotConfig.bot_token is not None:
                     self.is_bot_logged_in = True
                     self.loop.run_until_complete(self.start(
