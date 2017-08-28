@@ -668,8 +668,8 @@ class PluginInstaller:
     DecoraterBot.
     """
     def __init__(self, connector=None, loop=None):
-        self.session = aiohttp.ClientSession(
-            connector=connector, loop=loop)
+        self.connector = connector
+        self.loop = loop
 
     async def request_repo(self, pluginname):
         """
@@ -680,18 +680,21 @@ class PluginInstaller:
             GitHubRoute(
                 "DecoraterBot-devs", "DecoraterBot-cogs",
                 "master", "cogslist.json")).url
-        data = await self.session.get(url)
-        resp1 = await data.json(content_type='text/plain')
-        version = resp1[pluginname]['version']
-        url2 = resp1[pluginname]['downloadurl']
-        url3 = resp1[pluginname]['textjson']
-        data2 = await self.session.get(url2)
-        data3 = await self.session.get(url3)
-        plugincode = await data2.text()
-        textjson = await data3.text()
-        return PluginData(plugincode=plugincode,
-                          version=version,
-                          textjson=textjson)
+        async with aiohttp.ClientSession(
+            connector=self.connector, loop=self.loop) as session:
+            data = await session.get(url)
+            resp1 = await data.json(content_type='text/plain')
+            version = resp1[pluginname]['version']
+            url2 = resp1[pluginname]['downloadurl']
+            url3 = resp1[pluginname]['textjson']
+            data2 = await session.get(url2)
+            data3 = await session.get(url3)
+            plugincode = await data2.text()
+            textjson = await data3.text()
+            return PluginData(
+                plugincode=plugincode,
+                version=version,
+                textjson=textjson)
 
     async def checkupdate(self, pluginname):
         """
