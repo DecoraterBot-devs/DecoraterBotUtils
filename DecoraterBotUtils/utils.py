@@ -23,7 +23,7 @@ __all__ = [
     'PluginData', 'YTDLLogger', 'construct_reply',
     'BotPMError', 'BotCredentialsVars', 'CreditsReader',
     'PluginTextReader', 'PluginConfigReader', 'make_version',
-    'PluginInstaller', 'ReconnectionHelper', 'log_writter',
+    'PluginInstaller', 'log_writter',
     'CogLogger', 'config', 'BaseClient', 'TinyURLContainer']
 
 
@@ -734,25 +734,6 @@ class PluginInstaller:
             self.install_plugin(pluginname)
 
 
-class ReconnectionHelper:
-    """
-    Helps the bot with Reconnections.
-    """
-    def __init__(self):
-        self.reconnects = 0
-
-    def reconnect_helper(self):
-        """
-        helps make the bot reconnect.
-        """
-        self.reconnects += 1
-        if self.reconnects != 0:
-            print(
-                'Bot is currently reconnecting '
-                'for %i times.' % self.reconnects)
-        return -1
-
-
 def log_writter(filename, data):
     """
     Log file writter.
@@ -1459,7 +1440,6 @@ class BaseClient(commands.Bot):
 
     def __init__(self, **kwargs):
         self._start = time.time()
-        self._rec = ReconnectionHelper()
         self.logged_in_ = BaseClient.logged_in
         self.somebool = False
         self.reload_normal_commands = False
@@ -1500,7 +1480,7 @@ class BaseClient(commands.Bot):
         returns the bot's
         console text.
         """
-        consoledata = BaseConfigReader(file='ConsoleWindow.json')
+        consoledata = BaseConfigReader(file='ConsoleWindow.json').file
         consoledata = consoledata[self.BotConfig.language]
         return consoledata
 
@@ -1707,10 +1687,7 @@ class BaseClient(commands.Bot):
         """
         Bot Login Helper.
         """
-        while True:
-            ret = self.login_info()
-            if ret is not None and ret is not -1:
-                break
+        self.login_info()
 
     def login_info(self):
         """
@@ -1725,30 +1702,23 @@ class BaseClient(commands.Bot):
                         self.BotConfig.bot_token))
             except discord.errors.GatewayNotFound:
                 print(str(self.consoletext['Login_Gateway_No_Find'][0]))
-                return -2
+                return
             except discord.errors.LoginFailure as e:
                 if str(e) == "Improper credentials have been passed.":
                     print(str(self.consoletext['Login_Failure'][0]))
-                    return -2
+                    return
                 elif str(e) == "Improper token has been passed.":
                     print(str(self.consoletext['Invalid_Token'][0]))
-                    return -2
+                    return
             except TypeError:
                 pass
             except KeyboardInterrupt:
                 pass
-            except RuntimeError:
-                self.http.recreate()
-            except Exception:  # catch all other exceptions.
-                return self._rec.reconnect_helper()
-            if self.is_bot_logged_in:
-                if not self.is_logged_in:
-                    pass
-                else:
-                    return self._rec.reconnect_helper()
+            except Exception:
+                pass
         else:
             print(str(self.consoletext['Credentials_Not_Found'][0]))
-            return -2
+            return
 
     def variable(self):
         """
