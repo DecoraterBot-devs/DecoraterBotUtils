@@ -766,7 +766,6 @@ class CogLogger:
         try:
             self.LogData = BaseConfigReader(file='LogData.json').config
             self.LogData = self.LogData[self.bot.BotConfig.language]
-            self.LogDataFile.close()
         except FileNotFoundError:
             print(str(self.bot.consoletext['Missing_JSON_Errors'][2]))
             sys.exit(2)
