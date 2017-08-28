@@ -223,12 +223,7 @@ class BaseConfigReader:
             sys.path[0], 'resources', 'ConfigData',
             'config.dbcd')
         self.file = reader_main(self.filename, dbcd_file).to_json()
-        if self.file is not None:
-            try:
-                self.config = json.load(self.file)
-            except(OSError, IOError):
-                pass
-        else:
+        if self.file is None:
             # go to old load.
             self._load()
 
