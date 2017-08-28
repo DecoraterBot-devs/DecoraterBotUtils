@@ -222,7 +222,7 @@ class BaseConfigReader:
         dbcd_file = os.path.join(
             sys.path[0], 'resources', 'ConfigData',
             'config.dbcd')
-        self.file = reader_main(self.filename, dbcd_file)
+        self.file = reader_main(self.filename, dbcd_file).to_json()
         if self.file is not None:
             try:
                 self.config = json.load(self.file)
@@ -302,13 +302,8 @@ def plugintextreader(file=None):
     dbcd_file = os.path.join(
         sys.path[0], 'resources', 'ConfigData',
         'plugins.dbcd')
-    filedata = reader_main(file, dbcd_file)
-    if filedata is not None:
-        try:
-            return json.load(filedata)
-        except(OSError, IOError):
-            pass
-    else:
+    filedata = reader_main(file, dbcd_file).to_json()
+    if filedata is None:
         # resort to loading like normal if not in dbcd file.
         json_file = os.path.join(
             sys.path[0], 'resources',
@@ -319,7 +314,7 @@ def plugintextreader(file=None):
                 return json.load(fileobj)
         except(OSError, IOError):
             pass
-    return None
+    return filedata
 
 
 def pluginconfigreader(file=None):
@@ -327,15 +322,20 @@ def pluginconfigreader(file=None):
     Obtains data from plugin json files
     that contains config for commands.
     """
-    jsonfile = os.path.join(
+    dbcd_file = os.path.join(
         sys.path[0], 'resources', 'ConfigData',
-        file)
-    try:
-        with open(jsonfile) as fileobje:
-            return json.load(fileobje)
-    except(OSError, IOError):
-        pass
-    return None
+        'database.dbcd')
+    filedata = reader_main(file, dbcd_file).to_json()
+    if filedata is None:
+        jsonfile = os.path.join(
+            sys.path[0], 'resources', 'ConfigData',
+            file)
+        try:
+            with open(jsonfile) as fileobje:
+                return json.load(fileobje)
+        except(OSError, IOError):
+            pass
+    return filedata
 
 
 PluginConfigReader = pluginconfigreader
@@ -1505,7 +1505,7 @@ class BaseClient(commands.Bot):
         returns the bot's
         console text.
         """
-        consoledata = PluginConfigReader(file='ConsoleWindow.json')
+        consoledata = BaseConfigReader(file='ConsoleWindow.json')
         consoledata = consoledata[self.BotConfig.language]
         return consoledata
 
