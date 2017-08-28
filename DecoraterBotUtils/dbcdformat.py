@@ -8,6 +8,7 @@ import os
 import struct
 import sys
 import zlib
+import json
 from xml.dom.minidom import parse, Document
 
 
@@ -27,6 +28,30 @@ class EntryVer1(object):
         self.relative_offset = relative_offset
         self.file_time = file_time
         self.algorithm = algorithm
+
+
+class Result:
+    """ ... """
+    def __init__(self, data):
+        self.data = data
+
+    def to_json(self):
+        """ ... """
+        return json.loads(self.data)
+
+    def dump(self, filename, dbcdfile, jsondata):
+        """ ... """
+        type(self)
+        reader_main(filename, dbcdfile, write=True)
+        in_path = dbcdfile.replace('.dbcd', '') + '_tmp'
+        json_file = os.path.join(
+            in_path, filename)
+        try:
+            with open(json_file, mode='w') as file:
+                file.write(json.dumps(jsondata, indent=4, sort_keys=True))
+        except(OSError, IOError):
+            pass
+        writer_main(in_path, dbcdfile)
 
 
 def make_entries(crc_er, entry_count):
@@ -113,11 +138,9 @@ def unpacker_main(argv):
     print("Extraction Complete.")
 
 
-def reader_main(filename, dbcdfile):
+def reader_main(filename, dbcdfile, write=False):
     """
-    Main Unpacker Program Function.
-    :param argv: Arguments.
-    :return: Nothing.
+    Main Reader Program Function.
     """
     try:
         with open(dbcdfile, 'rb') as file_object:
@@ -145,38 +168,21 @@ def reader_main(filename, dbcdfile):
             entry_file_data = (file_data[theunpack_offset + entry.relative_offset:theunpack_offset +
                                entry.relative_offset + entry.compressed_size])
             entry_file_data = zlib.decompress(entry_file_data)
-            if entry.name == filename:
-                return entry_file_data.decode('utf-8')
+            if not write:
+                if entry.name == filename:
+                    return Result(entry_file_data.decode('utf-8'))
+            else:
+                os.makedirs(dbcdfile.replace('.dbcd', '') + '_tmp')
+                file_path = os.path.join(
+                    dbcdfile.replace('.dbcd', '') + '_tmp', entry.name)
+                with open(file_path, 'wb') as file_object:
+                    file_object.write(entry_file_data)
     except FileNotFoundError:
         pass
 
 
-def packer_main(argv):
-    """
-    Main Packer Program Function.
-    :param argv: Arguments.
-    :return: Nothing.
-    """
-    if len(argv) < 2:
-        print("Usage:\ndbcdpact --in <Folder name> --out <dbcd file name>")
-        sys.exit(2)
-    try:
-        options, arguments = getopt.getopt(argv, 'i:o:', ['in=', 'out='])
-    except getopt.GetoptError:
-        sys.exit(2)
-    in_path = None
-    out_path = None
-    for option, argument in options:
-        if option in ('i', '--in'):
-            in_path = argument
-        elif option in ('o', '--out'):
-            out_path = argument
-    if not in_path or not out_path:
-        print("Usage:\ndbcdpact --in <Folder name> --out <dbcd file name>")
-        sys.exit(2)
-    if not os.path.isdir(in_path):
-        print("Usage:\ndbcdpact --in <Folder name> --out <dbcd file name>")
-        sys.exit(2)
+def writer_main(in_path, out_path):
+    """ ... """
     crc = Document()
     crc_file_info = crc.createElement("Files")
     crc.appendChild(crc_file_info)
@@ -239,4 +245,33 @@ def packer_main(argv):
                 file_object.close()
                 file_object = None
         os.rmdir(in_path)
-        print("File created.")
+
+
+def packer_main(argv):
+    """
+    Main Packer Program Function.
+    :param argv: Arguments.
+    :return: Nothing.
+    """
+    if len(argv) < 2:
+        print("Usage:\ndbcdpact --in <Folder name> --out <dbcd file name>")
+        sys.exit(2)
+    try:
+        options, arguments = getopt.getopt(argv, 'i:o:', ['in=', 'out='])
+    except getopt.GetoptError:
+        sys.exit(2)
+    in_path = None
+    out_path = None
+    for option, argument in options:
+        if option in ('i', '--in'):
+            in_path = argument
+        elif option in ('o', '--out'):
+            out_path = argument
+    if not in_path or not out_path:
+        print("Usage:\ndbcdpact --in <Folder name> --out <dbcd file name>")
+        sys.exit(2)
+    if not os.path.isdir(in_path):
+        print("Usage:\ndbcdpact --in <Folder name> --out <dbcd file name>")
+        sys.exit(2)
+    writer_main(in_path, out_path)
+    print("File created.")
