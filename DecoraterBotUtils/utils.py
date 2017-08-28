@@ -1705,8 +1705,6 @@ class BaseClient(commands.Bot):
             _continue = True
         if _continue:
             try:
-                # debug for now.
-                print(self.BotConfig.bot_token)
                 if self.BotConfig.bot_token is not None:
                     self.is_bot_logged_in = True
                     self.loop.run_until_complete(self.start(
