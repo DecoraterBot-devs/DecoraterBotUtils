@@ -1694,7 +1694,16 @@ class BaseClient(commands.Bot):
         Allows the bot to Connect / Reconnect.
         :return: Nothing or -1/-2 on failure.
         """
-        if self.credentials_check:
+        _continue = False
+        if self.BotConfig.file is None:
+            if self.credentials_check:
+                _continue = True
+            else:
+                print(str(self.consoletext['Credentials_Not_Found'][0]))
+                return
+        else:
+            _continue = True
+        if _continue:
             try:
                 if self.BotConfig.bot_token is not None:
                     self.is_bot_logged_in = True
@@ -1716,9 +1725,6 @@ class BaseClient(commands.Bot):
                 pass
             except Exception:
                 pass
-        else:
-            print(str(self.consoletext['Credentials_Not_Found'][0]))
-            return
 
     def variable(self):
         """
