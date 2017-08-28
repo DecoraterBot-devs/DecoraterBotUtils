@@ -15,6 +15,7 @@ from discord.ext import commands
 import aiohttp
 
 from .BotErrors import *
+from .dbcdformat import reader_main
 
 
 __all__ = [
@@ -199,7 +200,7 @@ class BaseConfigReader:
         self.json_file = None
         self.load()
 
-    def load(self):
+    def _load(self):
         """
         Loads the JSON config Data.
         :return: List.
@@ -212,6 +213,24 @@ class BaseConfigReader:
                 self.config = json.load(self.file)
         except(OSError, IOError):
             pass
+
+    def load(self):
+        """
+        Loads the JSON config Data.
+        :return: List.
+        """
+        dbcd_file = os.path.join(
+            sys.path[0], 'resources', 'ConfigData',
+            'config.dbcd')
+        self.file = reader_main(self.filename, dbcd_file)
+        if self.file is not None:
+            try:
+                self.config = json.load(self.file)
+            except(OSError, IOError):
+                pass
+        else:
+            # go to old load.
+            self._load()
 
     def getconfig(self, key):
         """
@@ -280,14 +299,26 @@ def plugintextreader(file=None):
     Obtains data from plugin json files
     that contains text for commands.
     """
-    json_file = os.path.join(
-        sys.path[0], 'resources', 'ConfigData', 'plugins',
-        file)
-    try:
-        with open(json_file) as fileobj:
-            return json.load(fileobj)
-    except(OSError, IOError):
-        pass
+    dbcd_file = os.path.join(
+        sys.path[0], 'resources', 'ConfigData',
+        'plugins.dbcd')
+    filedata = reader_main(file, dbcd_file)
+    if filedata is not None:
+        try:
+            return json.load(filedata)
+        except(OSError, IOError):
+            pass
+    else:
+        # resort to loading like normal if not in dbcd file.
+        json_file = os.path.join(
+            sys.path[0], 'resources',
+            'ConfigData', 'plugins',
+            file)
+        try:
+            with open(json_file) as fileobj:
+                return json.load(fileobj)
+        except(OSError, IOError):
+            pass
     return None
 
 
@@ -1535,22 +1566,6 @@ class BaseClient(commands.Bot):
         PATH = os.path.join(
             sys.path[0], 'resources', 'ConfigData', 'Credentials.json')
         return os.path.isfile(PATH) and os.access(PATH, os.R_OK)
-
-    async def send(self, message=None, ctx=None,
-                   *args, **kwargs):
-        """
-        wraps send_message.
-        """
-        try:
-            await self.send_message(
-                *args, **kwargs)
-        except discord.errors.Forbidden:
-            if ctx is not None:
-                await self.BotPMError.resolve_send_message_error(
-                    ctx)
-            else:
-                await self.BotPMError.resolve_send_message_error_old(
-                    message)
 
     def load_all_default_plugins(self):
         """
