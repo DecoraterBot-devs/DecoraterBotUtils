@@ -764,9 +764,7 @@ class CogLogger:
     def __init__(self, bot):
         self.bot = bot
         try:
-            self.LogDataFile = open(os.path.join(
-                sys.path[0], 'resources', 'ConfigData', 'LogData.json'))
-            self.LogData = json.load(self.LogDataFile)
+            self.LogData = BaseConfigReader(file='LogData.json').to_json()
             self.LogData = self.LogData[self.bot.BotConfig.language]
             self.LogDataFile.close()
         except FileNotFoundError:
