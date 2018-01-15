@@ -1,6 +1,6 @@
 /*
-Bot Errors defined and Used For DecoraterBot.
-*/
+ * Bot Errors defined and Used For DecoraterBot.
+ */
 #include <Python.h>
 
 static struct PyModuleDef BotErrorsmodule = {
