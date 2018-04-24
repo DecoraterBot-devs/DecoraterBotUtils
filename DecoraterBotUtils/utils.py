@@ -1426,8 +1426,8 @@ config = BotCredentialsVars()
 
 class BotClient(commands.Bot):
     """
-    Contains the stuff that gets
-    bound to the Bot's main client class.
+    Bot Main client Class.
+    This is where the Events are Registered.
     """
     logged_in = False
 
