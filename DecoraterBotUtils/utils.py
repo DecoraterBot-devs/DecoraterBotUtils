@@ -23,7 +23,7 @@ __all__ = [
     'BotPMError', 'BotCredentialsVars', 'CreditsReader',
     'PluginTextReader', 'PluginConfigReader', 'make_version',
     'PluginInstaller', 'ReconnectionHelper', 'log_writter',
-    'CogLogger', 'config', 'BaseClient', 'TinyURLContainer']
+    'CogLogger', 'config', 'BotClient', 'TinyURLContainer']
 
 
 def get_plugin_full_name(plugin_name):
@@ -1424,7 +1424,7 @@ class CogLogger:
 config = BotCredentialsVars()
 
 
-class BaseClient(commands.Bot):
+class BotClient(commands.Bot):
     """
     Contains the stuff that gets
     bound to the Bot's main client class.
