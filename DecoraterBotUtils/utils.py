@@ -23,8 +23,8 @@ __all__ = [
     'PluginData', 'YTDLLogger', 'construct_reply',
     'BotPMError', 'BotCredentialsVars', 'CreditsReader',
     'PluginTextReader', 'PluginConfigReader', 'make_version',
-    'PluginInstaller', 'log_writter',
-    'CogLogger', 'config', 'BaseClient', 'TinyURLContainer']
+    'PluginInstaller', 'log_writter', 'CogLogger',
+    'config', 'BotClient', 'TinyURLContainer']
 
 
 def get_plugin_full_name(plugin_name):
@@ -40,11 +40,11 @@ def construct_reply(message, msgdata):
     """
     Constructs an bot reply.
     """
-    return msgdata % (message.server.name, message.channel.name)
+    return msgdata.format(message.server.name, message.channel.name)
 
 
 class GitHubRoute:
-    """gets the route information to the an github resource/file."""
+    """gets the route information to the github resource/file(s)."""
     HEAD = "https://raw.githubusercontent.com/"
 
     def __init__(self, user : str, repo : str,
@@ -161,6 +161,8 @@ class YTDLLogger(object):
         self.log_setting_check('ytdl_error', msg)
 
 
+# TODO: Place the code in this class
+# with a global on_command_error.
 class BotPMError:
     """
     Class for PMing bot errors.
@@ -1431,10 +1433,10 @@ class CogLogger:
 config = BotCredentialsVars()
 
 
-class BaseClient(commands.Bot):
+class BotClient(commands.Bot):
     """
-    Contains the stuff that gets
-    bound to the Bot's main client class.
+    Bot Main client Class.
+    This is where the Events are Registered.
     """
     logged_in = False
 
