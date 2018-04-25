@@ -15,6 +15,7 @@ from discord.ext import commands
 import aiohttp
 
 from .BotErrors import *
+from .dbcdformat import reader_main
 
 
 __all__ = [
@@ -22,8 +23,8 @@ __all__ = [
     'PluginData', 'YTDLLogger', 'construct_reply',
     'BotPMError', 'BotCredentialsVars', 'CreditsReader',
     'PluginTextReader', 'PluginConfigReader', 'make_version',
-    'PluginInstaller', 'ReconnectionHelper', 'log_writter',
-    'CogLogger', 'config', 'BotClient', 'TinyURLContainer']
+    'PluginInstaller', 'log_writter', 'CogLogger',
+    'config', 'BotClient', 'TinyURLContainer']
 
 
 def get_plugin_full_name(plugin_name):
@@ -160,6 +161,8 @@ class YTDLLogger(object):
         self.log_setting_check('ytdl_error', msg)
 
 
+# TODO: Place the code in this class
+# with a global on_command_error.
 class BotPMError:
     """
     Class for PMing bot errors.
@@ -199,7 +202,7 @@ class BaseConfigReader:
         self.json_file = None
         self.load()
 
-    def load(self):
+    def _load(self):
         """
         Loads the JSON config Data.
         :return: List.
@@ -212,6 +215,19 @@ class BaseConfigReader:
                 self.config = json.load(self.file)
         except(OSError, IOError):
             pass
+
+    def load(self):
+        """
+        Loads the JSON config Data.
+        :return: List.
+        """
+        dbcd_file = os.path.join(
+            sys.path[0], 'resources', 'ConfigData',
+            'config.dbcd')
+        self.config = reader_main(self.filename, dbcd_file).to_json()
+        if self.config is None:
+            # go to old load.
+            self._load()
 
     def getconfig(self, key):
         """
@@ -280,15 +296,22 @@ def plugintextreader(file=None):
     Obtains data from plugin json files
     that contains text for commands.
     """
-    json_file = os.path.join(
-        sys.path[0], 'resources', 'ConfigData', 'plugins',
-        file)
-    try:
-        with open(json_file) as fileobj:
-            return json.load(fileobj)
-    except(OSError, IOError):
-        pass
-    return None
+    dbcd_file = os.path.join(
+        sys.path[0], 'resources', 'ConfigData',
+        'plugins.dbcd')
+    filedata = reader_main(file, dbcd_file).to_json()
+    if filedata is None:
+        # resort to loading like normal if not in dbcd file.
+        json_file = os.path.join(
+            sys.path[0], 'resources',
+            'ConfigData', 'plugins',
+            file)
+        try:
+            with open(json_file) as fileobj:
+                return json.load(fileobj)
+        except(OSError, IOError):
+            pass
+    return filedata
 
 
 def pluginconfigreader(file=None):
@@ -296,15 +319,20 @@ def pluginconfigreader(file=None):
     Obtains data from plugin json files
     that contains config for commands.
     """
-    jsonfile = os.path.join(
+    dbcd_file = os.path.join(
         sys.path[0], 'resources', 'ConfigData',
-        file)
-    try:
-        with open(jsonfile) as fileobje:
-            return json.load(fileobje)
-    except(OSError, IOError):
-        pass
-    return None
+        'database.dbcd')
+    filedata = reader_main(file, dbcd_file).to_json()
+    if filedata is None:
+        jsonfile = os.path.join(
+            sys.path[0], 'resources', 'ConfigData',
+            file)
+        try:
+            with open(jsonfile) as fileobje:
+                return json.load(fileobje)
+        except(OSError, IOError):
+            pass
+    return filedata
 
 
 PluginConfigReader = pluginconfigreader
@@ -642,8 +670,8 @@ class PluginInstaller:
     DecoraterBot.
     """
     def __init__(self, connector=None, loop=None):
-        self.session = aiohttp.ClientSession(
-            connector=connector, loop=loop)
+        self.connector = connector
+        self.loop = loop
 
     async def request_repo(self, pluginname):
         """
@@ -654,18 +682,21 @@ class PluginInstaller:
             GitHubRoute(
                 "DecoraterBot-devs", "DecoraterBot-cogs",
                 "master", "cogslist.json")).url
-        data = await self.session.get(url)
-        resp1 = await data.json(content_type='text/plain')
-        version = resp1[pluginname]['version']
-        url2 = resp1[pluginname]['downloadurl']
-        url3 = resp1[pluginname]['textjson']
-        data2 = await self.session.get(url2)
-        data3 = await self.session.get(url3)
-        plugincode = await data2.text()
-        textjson = await data3.text()
-        return PluginData(plugincode=plugincode,
-                          version=version,
-                          textjson=textjson)
+        async with aiohttp.ClientSession(
+            connector=self.connector, loop=self.loop) as session:
+            data = await session.get(url)
+            resp1 = await data.json(content_type='text/plain')
+            version = resp1[pluginname]['version']
+            url2 = resp1[pluginname]['downloadurl']
+            url3 = resp1[pluginname]['textjson']
+            data2 = await session.get(url2)
+            data3 = await session.get(url3)
+            plugincode = await data2.text()
+            textjson = await data3.text()
+            return PluginData(
+                plugincode=plugincode,
+                version=version,
+                textjson=textjson)
 
     async def checkupdate(self, pluginname):
         """
@@ -708,25 +739,6 @@ class PluginInstaller:
             self.install_plugin(pluginname)
 
 
-class ReconnectionHelper:
-    """
-    Helps the bot with Reconnections.
-    """
-    def __init__(self):
-        self.reconnects = 0
-
-    def reconnect_helper(self):
-        """
-        helps make the bot reconnect.
-        """
-        self.reconnects += 1
-        if self.reconnects != 0:
-            print(
-                'Bot is currently reconnecting '
-                'for %i times.' % self.reconnects)
-        return -1
-
-
 def log_writter(filename, data):
     """
     Log file writter.
@@ -754,11 +766,8 @@ class CogLogger:
     def __init__(self, bot):
         self.bot = bot
         try:
-            self.LogDataFile = open(os.path.join(
-                sys.path[0], 'resources', 'ConfigData', 'LogData.json'))
-            self.LogData = json.load(self.LogDataFile)
+            self.LogData = BaseConfigReader(file='LogData.json').config
             self.LogData = self.LogData[self.bot.BotConfig.language]
-            self.LogDataFile.close()
         except FileNotFoundError:
             print(str(self.bot.consoletext['Missing_JSON_Errors'][2]))
             sys.exit(2)
@@ -1433,7 +1442,6 @@ class BotClient(commands.Bot):
 
     def __init__(self, **kwargs):
         self._start = time.time()
-        self._rec = ReconnectionHelper()
         self.logged_in_ = BaseClient.logged_in
         self.somebool = False
         self.reload_normal_commands = False
@@ -1474,7 +1482,7 @@ class BotClient(commands.Bot):
         returns the bot's
         console text.
         """
-        consoledata = PluginConfigReader(file='ConsoleWindow.json')
+        consoledata = BaseConfigReader(file='ConsoleWindow.json').config
         consoledata = consoledata[self.BotConfig.language]
         return consoledata
 
@@ -1535,22 +1543,6 @@ class BotClient(commands.Bot):
         PATH = os.path.join(
             sys.path[0], 'resources', 'ConfigData', 'Credentials.json')
         return os.path.isfile(PATH) and os.access(PATH, os.R_OK)
-
-    async def send(self, message=None, ctx=None,
-                   *args, **kwargs):
-        """
-        wraps send_message.
-        """
-        try:
-            await self.send_message(
-                *args, **kwargs)
-        except discord.errors.Forbidden:
-            if ctx is not None:
-                await self.BotPMError.resolve_send_message_error(
-                    ctx)
-            else:
-                await self.BotPMError.resolve_send_message_error_old(
-                    message)
 
     def load_all_default_plugins(self):
         """
@@ -1697,17 +1689,23 @@ class BotClient(commands.Bot):
         """
         Bot Login Helper.
         """
-        while True:
-            ret = self.login_info()
-            if ret is not None and ret is not -1:
-                break
+        self.login_info()
 
     def login_info(self):
         """
         Allows the bot to Connect / Reconnect.
         :return: Nothing or -1/-2 on failure.
         """
-        if self.credentials_check:
+        _continue = False
+        if self.BotConfig.config is None:
+            if self.credentials_check:
+                _continue = True
+            else:
+                print(str(self.consoletext['Credentials_Not_Found'][0]))
+                return
+        else:
+            _continue = True
+        if _continue:
             try:
                 if self.BotConfig.bot_token is not None:
                     self.is_bot_logged_in = True
@@ -1715,34 +1713,20 @@ class BotClient(commands.Bot):
                         self.BotConfig.bot_token))
             except discord.errors.GatewayNotFound:
                 print(str(self.consoletext['Login_Gateway_No_Find'][0]))
-                return -2
+                return
             except discord.errors.LoginFailure as e:
                 if str(e) == "Improper credentials have been passed.":
                     print(str(self.consoletext['Login_Failure'][0]))
-                    return -2
+                    return
                 elif str(e) == "Improper token has been passed.":
                     print(str(self.consoletext['Invalid_Token'][0]))
-                    return -2
+                    return
             except TypeError:
                 pass
             except KeyboardInterrupt:
                 pass
-            except asyncio.futures.InvalidStateError:
-                return self._rec.reconnect_helper()
-            except aiohttp.ClientResponseError:
-                return self._rec.reconnect_helper()
-            except aiohttp.ClientOSError:
-                return self._rec.reconnect_helper()
-            except RuntimeError:
-                self.http.recreate()
-            if self.is_bot_logged_in:
-                if not self.is_logged_in:
-                    pass
-                else:
-                    return self._rec.reconnect_helper()
-        else:
-            print(str(self.consoletext['Credentials_Not_Found'][0]))
-            return -2
+            except Exception:
+                pass
 
     def variable(self):
         """
