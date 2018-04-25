@@ -7,6 +7,7 @@ import os
 import sys
 import traceback
 import asyncio
+import sqlite3
 
 import consolechange
 import dbapi
@@ -15,9 +16,11 @@ from discord.ext import commands
 import aiohttp
 
 from .BotErrors import *
-from .dbcdformat import reader_main
 
 
+# we import sqlite3 as I want to use that
+# for credentials and other runtime stuff
+# instead of json.
 __all__ = [
     'get_plugin_full_name', 'GitHubRoute',
     'PluginData', 'YTDLLogger', 'construct_reply',
