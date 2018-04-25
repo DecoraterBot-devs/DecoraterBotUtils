@@ -7,18 +7,18 @@ import os
 import sys
 import traceback
 import asyncio
-import sqlite3
 
 import consolechange
 import dbapi
 import discord
 from discord.ext import commands
 import aiohttp
+import asyncpg
 
 from .BotErrors import *
 
 
-# we import sqlite3 as I want to use that
+# we import asyncpg as I want to use that
 # for credentials and other runtime stuff
 # instead of json.
 __all__ = [
