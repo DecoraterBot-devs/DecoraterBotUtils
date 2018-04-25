@@ -39,11 +39,11 @@ def construct_reply(message, msgdata):
     """
     Constructs an bot reply.
     """
-    return msgdata % (message.server.name, message.channel.name)
+    return msgdata.format(message.server.name, message.channel.name)
 
 
 class GitHubRoute:
-    """gets the route information to the an github resource/file."""
+    """gets the route information to the github resource/file(s)."""
     HEAD = "https://raw.githubusercontent.com/"
 
     def __init__(self, user : str, repo : str,
