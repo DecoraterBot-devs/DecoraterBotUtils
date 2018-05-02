@@ -9,8 +9,8 @@ cchardet
 cffi
 multidict
 yarl
-discord.webhooks
 TinyURL3
 consolechange
 git+https://github.com/AraHaan/dbapi.git
 youtube_dl
+asyncpg
