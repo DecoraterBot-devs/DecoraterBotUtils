@@ -2,15 +2,15 @@ regex
 aioredis
 colorama
 pycares
-discord.py < 1.0.0a
+discord.py
 aiohttp
 PyNacl
 cchardet
 cffi
 multidict
 yarl
-TinyURL3
-consolechange
-git+https://github.com/AraHaan/dbapi.git
+git+https://github.com/IzunaDevs/TinyURL.git@indev
+git+https://github.com/IzunaDevs/consolechange.git
+git+https://github.com/IzunaDevs/dbapi.git
 youtube_dl
 asyncpg
