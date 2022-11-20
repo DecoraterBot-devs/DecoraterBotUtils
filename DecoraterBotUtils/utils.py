@@ -2,18 +2,17 @@
 Utils for DecoraterBot.
 """
 import json
+import logging
 import time
 import os
 import sys
 import traceback
-import asyncio
 
 import consolechange
 import dbapi
 import discord
 from discord.ext import commands
 import aiohttp
-import asyncpg
 
 from .BotErrors import *
 
@@ -23,10 +22,10 @@ from .BotErrors import *
 # instead of json.
 __all__ = [
     'get_plugin_full_name', 'GitHubRoute',
-    'PluginData', 'YTDLLogger', 'construct_reply',
+    'PluginData', 'construct_reply',
     'BotPMError', 'BotCredentialsVars', 'CreditsReader',
     'PluginTextReader', 'PluginConfigReader', 'make_version',
-    'PluginInstaller', 'log_writter', 'CogLogger',
+    'PluginInstaller', 'log_writer', 'CogLogger',
     'config', 'BotClient', 'TinyURLContainer']
 
 
@@ -41,7 +40,7 @@ def get_plugin_full_name(plugin_name):
 
 def construct_reply(message, msgdata):
     """
-    Constructs an bot reply.
+    Constructs a bot reply.
     """
     return msgdata.format(message.server.name, message.channel.name)
 
@@ -50,8 +49,8 @@ class GitHubRoute:
     """gets the route information to the github resource/file(s)."""
     HEAD = "https://raw.githubusercontent.com/"
 
-    def __init__(self, user : str, repo : str,
-                 branch : str, filename : str):
+    def __init__(self, user: str, repo: str,
+                 branch: str, filename: str):
         self.url = (self.HEAD + user + "/" +
                     repo + "/" + branch + "/" +
                     filename)
@@ -68,104 +67,7 @@ class PluginData:
         self.textjson = textjson
 
 
-class YTDLLogger(object):
-    """
-    Class for Silencing all of the Youtube_DL Logging stuff that defaults to
-    console.
-    """
-    def __init__(self, bot):
-        self.bot = bot
-
-    def log_file_code(self, meth, msg):
-        """
-        Logs data to file (if set).
-        :param meth: Method name.
-        :param msg: message.
-        :return: Nothing.
-        """
-        type(self)
-        if meth is not '':
-            if meth == 'ytdl_debug':
-                logfile = os.path.join(
-                    sys.path[0], 'resources', 'Logs',
-                    'ytdl_debug_logs.log')
-                try:
-                    log_writter(logfile, msg + '\n')
-                except PermissionError:
-                    return
-            elif meth == 'ytdl_warning':
-                logfile2 = os.path.join(
-                    sys.path[0], 'resources', 'Logs',
-                    'ytdl_warning_logs.log')
-                try:
-                    log_writter(logfile2, msg + '\n')
-                except PermissionError:
-                    return
-            elif meth == 'ytdl_error':
-                logfile3 = os.path.join(
-                    sys.path[0], 'resources', 'Logs',
-                    'ytdl_error_logs.log')
-                try:
-                    log_writter(logfile3, msg + '\n')
-                except PermissionError:
-                    return
-            elif meth == 'ytdl_info':
-                logfile4 = os.path.join(
-                    sys.path[0], 'resources', 'Logs',
-                    'ytdl_info_logs.log')
-                try:
-                    log_writter(logfile4, msg + '\n')
-                except PermissionError:
-                    return
-        else:
-            return
-
-    def log_setting_check(self, meth, msg):
-        """
-        checks the log youtube_dl setting.
-        """
-        if self.bot.BotConfig.log_ytdl:
-            self.log_file_code(meth, msg)
-
-    def info(self, msg):
-        """
-        Reroutes the Youtube_DL Messages of this type to teither a file or
-        silences them.
-        :param msg: Message.
-        :return: Nothing.
-        """
-        self.log_setting_check('ytdl_info', msg)
-
-    def debug(self, msg):
-        """
-        Reroutes the Youtube_DL Messages of this type to teither a file or
-        silences them.
-        :param msg: Message.
-        :return: Nothing.
-        """
-        self.log_setting_check('ytdl_debug', msg)
-
-    def warning(self, msg):
-        """
-        Reroutes the Youtube_DL Messages of this type to teither a file or
-        silences them.
-        :param msg: Message.
-        :return: Nothing.
-        """
-        self.log_setting_check('ytdl_warning', msg)
-
-    def error(self, msg):
-        """
-        Reroutes the Youtube_DL Messages of this type to teither a file or
-        silences them.
-        :param msg: Message.
-        :return: Nothing.
-        """
-        self.log_setting_check('ytdl_error', msg)
-
-
-# TODO: Place the code in this class
-# with a global on_command_error.
+# TODO: Place the code in this class with a global on_command_error.
 class BotPMError:
     """
     Class for PMing bot errors.
@@ -205,7 +107,7 @@ class BaseConfigReader:
         self.json_file = None
         self.load()
 
-    def _load(self):
+    def load(self):
         """
         Loads the JSON config Data.
         :return: List.
@@ -218,19 +120,6 @@ class BaseConfigReader:
                 self.config = json.load(self.file)
         except(OSError, IOError):
             pass
-
-    def load(self):
-        """
-        Loads the JSON config Data.
-        :return: List.
-        """
-        dbcd_file = os.path.join(
-            sys.path[0], 'resources', 'ConfigData',
-            'config.dbcd')
-        self.config = reader_main(self.filename, dbcd_file).to_json()
-        if self.config is None:
-            # go to old load.
-            self._load()
 
     def getconfig(self, key):
         """
@@ -299,22 +188,15 @@ def plugintextreader(file=None):
     Obtains data from plugin json files
     that contains text for commands.
     """
-    dbcd_file = os.path.join(
-        sys.path[0], 'resources', 'ConfigData',
-        'plugins.dbcd')
-    filedata = reader_main(file, dbcd_file).to_json()
-    if filedata is None:
-        # resort to loading like normal if not in dbcd file.
-        json_file = os.path.join(
-            sys.path[0], 'resources',
-            'ConfigData', 'plugins',
-            file)
-        try:
-            with open(json_file) as fileobj:
-                return json.load(fileobj)
-        except(OSError, IOError):
-            pass
-    return filedata
+    json_file = os.path.join(
+        sys.path[0], 'resources',
+        'ConfigData', 'plugins',
+        file)
+    try:
+        with open(json_file) as fileobj:
+            return json.load(fileobj)
+    except(OSError, IOError):
+        pass
 
 
 def pluginconfigreader(file=None):
@@ -322,20 +204,14 @@ def pluginconfigreader(file=None):
     Obtains data from plugin json files
     that contains config for commands.
     """
-    dbcd_file = os.path.join(
+    jsonfile = os.path.join(
         sys.path[0], 'resources', 'ConfigData',
-        'database.dbcd')
-    filedata = reader_main(file, dbcd_file).to_json()
-    if filedata is None:
-        jsonfile = os.path.join(
-            sys.path[0], 'resources', 'ConfigData',
-            file)
-        try:
-            with open(jsonfile) as fileobje:
-                return json.load(fileobje)
-        except(OSError, IOError):
-            pass
-    return filedata
+        file)
+    try:
+        with open(jsonfile) as fileobje:
+            return json.load(fileobje)
+    except(OSError, IOError):
+        pass
 
 
 PluginConfigReader = pluginconfigreader
@@ -679,14 +555,14 @@ class PluginInstaller:
     async def request_repo(self, pluginname):
         """
         requests the bot's plugin
-        repository for an particualar plugin.
+        repository for a particular plugin.
         """
         url = (
             GitHubRoute(
                 "DecoraterBot-devs", "DecoraterBot-cogs",
                 "master", "cogslist.json")).url
         async with aiohttp.ClientSession(
-            connector=self.connector, loop=self.loop) as session:
+                connector=self.connector, loop=self.loop) as session:
             data = await session.get(url)
             resp1 = await data.json(content_type='text/plain')
             version = resp1[pluginname]['version']
@@ -714,20 +590,20 @@ class PluginInstaller:
             return requestrepo
 
     async def checkupdates(self, pluginlist):
-       """
-       Checks for updates for plugins
-       in the plugin list.
-       """
-       update_list = []
-       for plugin in pluginlist:
-           update_list.append(await self.checkupdate(plugin))
-       # so bot can know which plugins have updates.
-       return update_list
+        """
+        Checks for updates for plugins
+        in the plugin list.
+        """
+        update_list = []
+        for plugin in pluginlist:
+            update_list.append(await self.checkupdate(plugin))
+        # so bot can know which plugins have updates.
+        return update_list
 
     async def install_plugin(self, pluginname):
         """
         installs a plugin provided.
-        Also gets and sets an cached
+        Also gets and sets a cached
         version of them too.
         """
         # TODO: Finish this.
@@ -739,12 +615,12 @@ class PluginInstaller:
         """
         for pluginname in pluginlist:
             # install each plugin individually.
-            self.install_plugin(pluginname)
+            await self.install_plugin(pluginname)
 
 
-def log_writter(filename, data):
+def log_writer(filename, data):
     """
-    Log file writter.
+    Log file writer.
 
     This is where all the common
     log file writes go to.
@@ -775,33 +651,6 @@ class CogLogger:
             print(str(self.bot.consoletext['Missing_JSON_Errors'][2]))
             sys.exit(2)
 
-    def gamelog(self, ctx, desgame):
-        """
-        Logs Game Names.
-        :param ctx: Message Context.
-        :param desgame: Game Name.
-        :return: Nothing.
-        """
-        gmelogdata01 = str(self.LogData['Game_Logs'][0]).format(
-            ctx.message.author.name, desgame,
-            ctx.message.author.id)
-        gmelogspm = gmelogdata01
-        gmelogsservers = ""
-        if ctx.message.channel.is_private is False:
-            gmelog001 = str(self.LogData['Game_Logs'][1]).format(
-                ctx.message.author.name, desgame,
-                ctx.message.author.id)
-            gmelogsservers = gmelog001
-        logfile = os.path.join(
-            sys.path[0], 'resources', 'Logs', 'gamelog.log')
-        try:
-            if ctx.message.channel.is_private is True:
-                log_writter(logfile, gmelogspm)
-            else:
-                log_writter(logfile, gmelogsservers)
-        except PermissionError:
-            return
-
     def log_data_reader(self, entry, index, *args):
         """
         log data reader that also
@@ -812,102 +661,6 @@ class CogLogger:
         """
         return str(self.LogData[entry][index]).format(
             *args)
-
-    def logs(self, message):
-        """
-        Logs Sent Messages.
-        :param message: Messages.
-        :return: Nothing.
-        """
-        logs001 = str(self.LogData['On_Message_Logs'][0]).format(
-            message.author.name, message.author.id, str(
-                message.timestamp), message.content)
-        if message.channel.is_private is False:
-            logs003 = str(self.LogData['On_Message_Logs'][1]).format(
-                message.author.name, message.author.id, str(
-                    message.timestamp), message.channel.server.name,
-                message.channel.name, message.content)
-        if message.content is not None:
-            logfile = os.path.join(
-                sys.path[0], 'resources', 'Logs', 'log.log')
-            try:
-                if message.channel.is_private is True:
-                    log_writter(logfile, logs001)
-                else:
-                    log_writter(logfile, logs003)
-            except PermissionError:
-                return
-
-    def edit_logs(self, before, after):
-        """
-        Logs Edited Messages.
-        :param before: Messages.
-        :param after: Messages.
-        :return: Nothing.
-        """
-        logfile = os.path.join(
-            sys.path[0], 'resources', 'Logs', 'edit_log.log')
-        editlog001 = str(self.LogData['On_Message_Logs'][0]).format(
-            before.author.name, before.author.id,
-            str(before.timestamp), str(before.content),
-            str(after.content))
-        if before.channel.is_private is False:
-            editlog003 = str(self.LogData['On_Message_Logs'][1]).format(
-                before.author.name, before.author.id,
-                str(before.timestamp), before.channel.server.name,
-                before.channel.name, str(before.content),
-                str(after.content))
-        try:
-            try:
-                if before.content == after.content:
-                    self.resolve_embed_logs(before)
-                else:
-                    try:
-                        log_writter(logfile, editlog003)
-                    except PermissionError:
-                        return
-            except Exception as e:
-                # Empty string that is not used nor assigned
-                # to a variable. (for now)
-                str(e)
-                if before.channel.is_private is False:
-                    print(str(self.LogData['On_Edit_Logs_Error'][0]))
-                else:
-                    if before.content == after.content:
-                        self.resolve_embed_logs(before)
-                    else:
-                        log_writter(logfile, editlog001)
-        except PermissionError:
-            return
-
-    def delete_logs(self, message):
-        """
-        Logs Deleted Messages.
-        :param message: Messages.
-        :return: Nothing.
-        """
-        dellogs001 = str(self.LogData['On_Message_Logs'][0]).format(
-            message.author.name, message.author.id,
-            str(message.timestamp), message.content)
-        dellogspm = dellogs001
-        dellogsservers = None
-        if message.channel.is_private is False:
-            dellogs003 = str(self.LogData['On_Message_Logs'][1]).format(
-                message.author.name, message.author.id,
-                str(message.timestamp),
-                message.channel.server.name,
-                message.channel.name, message.content)
-            dellogsservers = dellogs003
-        if message.content is not None:
-            try:
-                logfile = os.path.join(
-                    sys.path[0], 'resources', 'Logs', 'delete_log.log')
-                if message.channel.is_private is True:
-                    log_writter(logfile, dellogspm)
-                else:
-                    log_writter(logfile, dellogsservers)
-            except PermissionError:
-                return
 
     def resolve_embed_logs(self, before):
         """
@@ -922,75 +675,8 @@ class CogLogger:
         logfile = os.path.join(
             sys.path[0], 'resources', 'Logs', 'embeds.log')
         try:
-            log_writter(logfile, data + "\n")
+            log_writer(logfile, data + "\n")
         except PermissionError:
-            return
-
-    async def send_logs(self, message):
-        """
-        Sends Sent Messages.
-        :param message: Messages.
-        :return: Nothing.
-        """
-        logs001 = self.log_data_reader(
-            'Send_On_Message_Logs', 0,
-            message.author.name, message.author.id,
-            str(message.timestamp),
-            message.channel.server.name, message.channel.name,
-            message.content)
-        sndmsglogs = logs001
-        try:
-            await self.bot.send_message(
-                discord.Object(id='153055192873566208'), content=sndmsglogs)
-        except discord.errors.NotFound:
-            return
-        except discord.errors.HTTPException:
-            return
-
-    async def send_edit_logs(self, before, after):
-        """
-        Sends Edited Messages.
-        :param before: Messages.
-        :param after: Messages.
-        :return: Nothing.
-        """
-        old = str(before.content)
-        new = str(after.content)
-        editlog001 = str(self.LogData['Send_On_Message_Edit_Logs'][0]).format(
-            before.author.name, before.author.id,
-            str(before.timestamp),
-            before.channel.server.name,
-            before.channel.name, old, new)
-        sendeditlogs = editlog001
-        if before.content != after.content:
-            try:
-                await self.bot.send_message(
-                    discord.Object(id='153055192873566208'),
-                    content=sendeditlogs)
-            except discord.errors.NotFound:
-                return
-            except discord.errors.HTTPException:
-                return
-
-    async def send_delete_logs(self, message):
-        """
-        Sends Deleted Messages.
-        :param message: Messages.
-        :return: Nothing.
-        """
-        dellogs001 = self.log_data_reader(
-            'Send_On_Message_Delete_Logs', 0,
-            message.author.name, message.author.id, str(message.timestamp),
-            message.channel.server.name, message.channel.name,
-            message.content)
-        senddeletelogs = dellogs001
-        try:
-            await self.bot.send_message(
-                discord.Object(id='153055192873566208'),
-                content=senddeletelogs)
-        except discord.errors.NotFound:
-            return
-        except discord.errors.HTTPException:
             return
 
     def on_bot_error(self, funcname, tbinfo, err):
@@ -1001,7 +687,7 @@ class CogLogger:
             Usage
             =====
             :param funcname: Must be a string with the name of the function
-            that caused a Error.
+            that caused an Error.
                 raises the Errors that happened if empty string or None is
                 given.
             :param tbinfo: string data of the traceback info. Must be a
@@ -1017,7 +703,7 @@ class CogLogger:
                 logfile = os.path.join(
                     sys.path[0], 'resources', 'Logs', 'error_log.log')
                 try:
-                    log_writter(logfile, exception_data)
+                    log_writer(logfile, exception_data)
                 except PermissionError:
                     return
             else:
@@ -1040,21 +726,7 @@ class CogLogger:
                                                                mem_svr_name)
         logfile = os.path.join(
             sys.path[0], 'resources', 'Logs', 'bans.log')
-        log_writter(logfile, ban_log_data)
-
-    async def send_ban_logs(self, channel, member):
-        """
-        sends the ban log data to a specific channel.
-        """
-        ban_log_data = str(self.LogData['Send_Ban_Logs'][0]).format(
-            member.name, member.id, member.discriminator)
-        try:
-            await self.bot.send_message(
-                channel, content=ban_log_data)
-        except discord.errors.NotFound:
-            return
-        except discord.errors.HTTPException:
-            return
+        log_writer(logfile, ban_log_data)
 
     def onavailable(self, server):
         """
@@ -1066,7 +738,7 @@ class CogLogger:
             self.LogData['On_Server_Available'][0]).format(server)
         logfile = os.path.join(
             sys.path[0], 'resources', 'Logs', 'available_servers.log')
-        log_writter(logfile, available_log_data)
+        log_writer(logfile, available_log_data)
 
     def onunavailable(self, server):
         """
@@ -1078,7 +750,7 @@ class CogLogger:
             self.LogData['On_Server_Unavailable'][0]).format(server)
         logfile = os.path.join(
             sys.path[0], 'resources', 'Logs', 'unavailable_servers.log')
-        log_writter(logfile, unavailable_log_data)
+        log_writer(logfile, unavailable_log_data)
 
     def onunban(self, server, user):
         """
@@ -1092,151 +764,7 @@ class CogLogger:
                                       server.name)
         logfile = os.path.join(
             sys.path[0], 'resources', 'Logs', 'unbans.log')
-        log_writter(logfile, unban_log_data)
-
-    async def send_unban_logs(self, channel, user):
-        """
-        sends the unban log data to a specific channel.
-        """
-        unban_log_data = str(self.LogData['Send_Unban_Logs'][0]).format(
-            user.name, user.id, user.discriminator)
-        try:
-            await self.bot.send_message(
-                channel, content=unban_log_data)
-        except discord.errors.NotFound:
-            return
-        except discord.errors.HTTPException:
-            return
-
-    def ongroupjoin(self, channel, user):
-        """
-        Logs group join.
-        :param channel: Channels.
-        :param user: Users.
-        :return: Nothing.
-        """
-        mem_name = user.name
-        mem_id = user.id
-        mem_dis = user.discriminator
-        mem_channel_name = channel.name
-        group_join_log_data = str(self.LogData['Group_Join_Logs'][0]).format(
-            mem_name, mem_id, mem_dis, mem_channel_name)
-        logfile = os.path.join(
-            sys.path[0], 'resources', 'Logs', 'group_join.log')
-        log_writter(logfile, group_join_log_data)
-
-    def ongroupremove(self, channel, user):
-        """
-        Logs group remove.
-        :param channel: Channels.
-        :param user: Users.
-        :return: Nothing.
-        """
-        mem_name = user.name
-        mem_id = user.id
-        mem_dis = user.discriminator
-        mem_channel_name = channel.name
-        group_remove_log_data = str(self.LogData['Group_Remove_Logs'][0]).format(
-            mem_name, mem_id, mem_dis, mem_channel_name)
-        logfile = os.path.join(
-            sys.path[0], 'resources', 'Logs', 'group_remove.log')
-        log_writter(logfile, group_remove_log_data)
-
-    def ontyping(self, channel, user, when):
-        """
-        Logs when a user is typing.
-        :param channel: Channels.
-        :param user: Users.
-        :param when: Time.
-        :return: Nothing.
-        """
-        typing_log_data = str(self.LogData['On_typing'][0]).format(
-            user.name, user.id, user.discriminator, channel.name,
-            str(when))
-        logfile = os.path.join(
-            sys.path[0], 'resources', 'Logs', 'typing.log')
-        log_writter(logfile, typing_log_data)
-
-    def onvoicestateupdate(self, before, after):
-        """
-        Logs When someone updates their voice state.
-        :param before: State.
-        :param after: State.
-        :return: Nothing.
-        """
-        mem_name = before.user.name
-        mem_id = before.user.id
-        mem_dis = before.user.discriminator
-        before_channel_name = before.channel.name
-        after_channel_name = after.channel.name
-        voice_update_log_data = str(self.LogData['voice_update'][0]).format(
-            mem_name, mem_id, mem_dis, before_channel_name,
-            after_channel_name)
-        logfile = os.path.join(
-            sys.path[0], 'resources', 'Logs', 'voice_update.log')
-        log_writter(logfile, voice_update_log_data)
-
-    def onchanneldelete(self, channel):
-        """
-        Logs Channel Deletion.
-        :param channel: Channel.
-        """
-        channel_delete_log_data = str(self.LogData['channel_delete'][0]).format(
-            channel.name, channel.id)
-        logfile = os.path.join(
-            sys.path[0], 'resources', 'Logs', 'channel_delete.log')
-        log_writter(logfile, channel_delete_log_data)
-
-    def onchannelcreate(self, channel):
-        """
-        Logs Channel Creation.
-        :param channel: Channel.
-        """
-        channel_create_log_data = str(self.LogData['channel_create'][0]).format(
-            channel.name, channel.id)
-        logfile = os.path.join(
-            sys.path[0], 'resources', 'Logs', 'channel_create.log')
-        log_writter(logfile, channel_create_log_data)
-
-    def onchannelupdate(self, before, after):
-        """
-        Logs Channel Updates.
-        :param before: Channel before.
-        :param after: Channel after.
-        :return: Nothing.
-        """
-        # change of permittions trigger this???
-        channel_update_log_data = str(self.LogData['channel_update'][0]).format(
-            before.name, before.id, after.name)
-        logfile = os.path.join(
-            sys.path[0], '{0}{1}resources{1}Logs{1}channel_update.log')
-        log_writter(logfile, channel_update_log_data)
-
-    def onmemberupdate(self, before, after):
-        """
-        Logs Member Updates.
-        :param before: Member before.
-        :param after: Member after.
-        :return: Nothing.
-        """
-        # change of permittions trigger this???
-        member_update_log_data = str(self.LogData['member_update'][0]).format(
-            before.name, before.id, after.name)
-        logfile = os.path.join(
-            sys.path[0], 'resources', 'Logs', 'member_update.log')
-        log_writter(logfile, member_update_log_data)
-
-    def onserverjoin(self, server):
-        """
-        Logs server Joins.
-        :param server: Server.
-        :return: Nothing.
-        """
-        server_join_log_data = str(self.LogData['server_join'][0]).format(
-            self.bot.user.name, self.bot.user.id, server.name)
-        logfile = os.path.join(
-            sys.path[0], 'resources', 'Logs', 'server_join.log')
-        log_writter(logfile, server_join_log_data)
+        log_writer(logfile, unban_log_data)
 
     def onserverremove(self, server):
         """
@@ -1248,82 +776,7 @@ class CogLogger:
             self.bot.user.name, self.bot.user.id, server.name)
         logfile = os.path.join(
             sys.path[0], 'resources', 'Logs', 'server_remove.log')
-        log_writter(logfile, server_remove_log_data)
-
-    def onserverupdate(self, before, after):
-        """
-        Logs Server Updates.
-        :param before: Server before.
-        :param after: Server after.
-        :return: Nothing.
-        """
-        server_update_log_data = str(self.LogData['server_update'][0]).format(
-            before.name, before.id, after.name)
-        logfile = os.path.join(
-            sys.path[0], 'resources', 'Logs', 'server_update.log')
-        log_writter(logfile, server_update_log_data)
-
-    def onserverrolecreate(self, role):
-        """
-        Logs role Creation.
-        :param role: Role.
-        :return: Nothing.
-        """
-        role_create_log_data = str(self.LogData['role_create'][0]).format(
-            role.name, role.id)
-        logfile = os.path.join(
-            sys.path[0], 'resources', 'Logs', 'role_create.log')
-        log_writter(logfile, role_create_log_data)
-
-    def onserverroledelete(self, role):
-        """
-        Logs role Deletion.
-        :param role: Role.
-        :return: Nothing.
-        """
-        role_delete_log_data = str(self.LogData['role_delete'][0]).format(
-            role.name, role.id)
-        logfile = os.path.join(
-            sys.path[0], 'resources', 'Logs', 'role_delete.log')
-        log_writter(logfile, role_delete_log_data)
-
-    def onserverroleupdate(self, before, after):
-        """
-        Logs Role updates.
-        :param before: Role before.
-        :param after: Role after.
-        :return: Nothing.
-        """
-        # change of permittions trigger this???
-        role_update_log_data = str(self.LogData['role_update'][0]).format(
-            before.name, before.id, after.name)
-        logfile = os.path.join(
-            sys.path[0], 'resources', 'Logs', 'role_update.log')
-        log_writter(logfile, role_update_log_data)
-
-    def onsocketrawreceive(self, msg):
-        """
-        Logs socket Raw recieves.
-        :param msg: Message from socket.
-        :return: Nothing.
-        """
-        raw_receive_log_data = str(self.LogData['raw_receive'][0]).format(
-            msg)
-        logfile = os.path.join(
-            sys.path[0], 'resources', 'Logs', 'raw_receive.log')
-        log_writter(logfile, raw_receive_log_data)
-
-    def onsocketrawsend(self, payload):
-        """
-        Logs socket raw sends.
-        :param payload: Payload that was sent.
-        :return: Nothing.
-        """
-        raw_send_log_data = str(self.LogData['raw_send'][0]).format(
-            payload)
-        logfile = os.path.join(
-            sys.path[0], 'resources', 'Logs', 'raw_send.log')
-        log_writter(logfile, raw_send_log_data)
+        log_writer(logfile, server_remove_log_data)
 
     def onresumed(self):
         """
@@ -1333,86 +786,7 @@ class CogLogger:
         resumed_log_data = str(self.LogData['resumed'][0])
         logfile = os.path.join(
             sys.path[0], 'resources', 'Logs', 'resumed.log')
-        log_writter(logfile, resumed_log_data)
-
-    def onserveremojisupdate(self, before, after):
-        """
-        Logs Server emoji updates.
-        :param before: Emoji before.
-        :param after: Emoji after.
-        :return: Nothing.
-        """
-        server_emojis_update_log_data = str(
-            self.LogData['server_emojis_update'][0]).format(
-            before.name, before.id, before.server.name,
-            after.name)
-        logfile = os.path.join(
-            sys.path[0], 'resources', 'Logs', 'server_emojis_update.log')
-        log_writter(logfile, server_emojis_update_log_data)
-
-    def onreactionadd(self, reaction, user):
-        """
-        Logs Reactions Added.
-        :param reaction: Reaction.
-        :param user: User.
-        :return: Nothing.
-        """
-        reaction_add_log_data = str(
-            self.LogData['reaction_add'][0]).format(
-            user.name, user.id, user.server, reaction.emoji.name,
-            reaction.emoji.id, reaction.emoji.server.name)
-        logfile = os.path.join(
-            sys.path[0], 'resources', 'Logs', 'reaction_add.log')
-        log_writter(logfile, reaction_add_log_data)
-
-    def onreactionremove(self, reaction, user):
-        """
-        Logs Reaction Removals.
-        :param reaction: Reaction.
-        :param user: User.
-        :return: Nothing.
-        """
-        reaction_remove_log_data = str(
-            self.LogData['reaction_remove'][0]).format(
-            user.name, user.id, user.server, reaction.emoji.name,
-            reaction.emoji.id, reaction.emoji.server.name)
-        logfile = os.path.join(
-            sys.path[0], 'resources', 'Logs', 'reaction_remove.log')
-        log_writter(logfile, reaction_remove_log_data)
-
-    def onreactionclear(self, message, reactions):
-        """
-        Logs Reaction clears.
-        :param message: Message.
-        :param reactions: Reactions.
-        :return: Nothing.
-        """
-        reactionnames = [
-            reaction.emoji.name for reaction in reactions]
-        reactionids = [
-            reaction.emoji.id for reaction in reactions]
-        reactionservers = [
-            reaction.emoji.server.name for reaction in reactions]
-        reaction_clear_log_data = str(
-            self.LogData['reaction_clear'][0]).format(
-            message.author.name, message.author.id, message.author.server,
-            reactionnames, reactionids, reactionservers)
-        logfile = os.path.join(
-            sys.path[0], 'resources', 'Logs', 'reaction_clear.log')
-        log_writter(logfile, reaction_clear_log_data)
-
-    def onmemberjoin(self, member):
-        """
-        Logs Member Joins.
-        :param member: Member.
-        :return: Nothing.
-        """
-        member_join_log_data = str(self.LogData['member_join'][0]).format(
-            member.name, member.id, member.discriminator,
-            member.server.name)
-        logfile = os.path.join(
-            sys.path[0], 'resources', 'Logs', 'member_join.log')
-        log_writter(logfile, member_join_log_data)
+        log_writer(logfile, resumed_log_data)
 
     def onkick(self, member):
         """
@@ -1430,7 +804,7 @@ class CogLogger:
                                                                  mem_svr_name)
         logfile = os.path.join(
             sys.path[0], 'resources', 'Logs', 'kicks.log')
-        log_writter(logfile, kick_log_data)
+        log_writer(logfile, kick_log_data)
 
 
 config = BotCredentialsVars()
@@ -1445,7 +819,7 @@ class BotClient(commands.Bot):
 
     def __init__(self, **kwargs):
         self._start = time.time()
-        self.logged_in_ = BaseClient.logged_in
+        self.logged_in_ = BotClient.logged_in
         self.somebool = False
         self.reload_normal_commands = False
         self.reload_voice_commands = False
@@ -1456,7 +830,7 @@ class BotClient(commands.Bot):
         self.rejoin_after_reload = False
         self.sent_prune_error_message = False
         self.is_bot_logged_in = False
-        super(BaseClient, self).__init__(**kwargs)
+        super(BotClient, self).__init__(**kwargs)
         self.dbapi = dbapi.DBAPI(self, self.BotConfig.api_token)
         self.BotPMError = BotPMError(self)
         # Deprecated.
@@ -1502,7 +876,7 @@ class BotClient(commands.Bot):
     @property
     def commands_list(self):
         """
-        retrieves a list of all of the bot's registered commands.
+        retrieves a list of all the bot's registered commands.
         """
         plugin_list = []
         for command in self.commands:
@@ -1532,7 +906,6 @@ class BotClient(commands.Bot):
         try:
             ret = PluginConfigReader(file='IgnoreList.json')
         except FileNotFoundError:
-            ret = None
             print(str(self.consoletext['Missing_JSON_Errors'][0]))
             sys.exit(2)
         return ret
@@ -1642,7 +1015,7 @@ class BotClient(commands.Bot):
                 asynciologgerhandler = logging.FileHandler(
                     filename=os.path.join(
                         sys.path[0], 'resources', 'Logs', 'asyncio.log'),
-                        encoding='utf-8', mode='w')
+                    encoding='utf-8', mode='w')
                 asynciologgerhandler.setFormatter(logging.Formatter(
                     '%(asctime)s:%(levelname)s:%(name)s: %(message)s'))
                 asynciologger.addHandler(asynciologgerhandler)
@@ -1670,7 +1043,7 @@ class BotClient(commands.Bot):
         """
         Changes the Console's size.
         """
-        # not used but avoids issues with this being an classmethod.
+        # not used but avoids issues with this being a classmethod.
         type(self)
         consolechange.consolesize(80, 23)
 
@@ -1683,7 +1056,7 @@ class BotClient(commands.Bot):
         self.discord_logger()
         self.changewindowtitle()
         # if self.BotConfig.change_console_size:
-        #    self.changewindowsize()
+        self.changewindowsize()
         self.load_all_default_plugins()
         self.variable()
         self.login_helper()
@@ -1737,8 +1110,8 @@ class BotClient(commands.Bot):
         on_ready event only happen 1
         time only. (e.g. the logged in printing stuff)
         """
-        if not BaseClient.logged_in:
-            BaseClient.logged_in = True
+        if not BotClient.logged_in:
+            BotClient.logged_in = True
             self.logged_in_ = True
 
 
@@ -1754,7 +1127,7 @@ class TinyURLContainer:
 
     def create_one(self, url):
         """
-        creates an shortened url.
+        creates a shortened url.
         """
         self.link = str(
             self.TinyURL.create_one(url))
