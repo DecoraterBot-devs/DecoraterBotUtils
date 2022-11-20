@@ -817,7 +817,8 @@ class BotClient(commands.Bot):
     """
     logged_in = False
 
-    def __init__(self, **kwargs):
+    def __init__(self, command_prefix, **kwargs):
+        self.command_prefix = command_prefix
         self._start = time.time()
         self.logged_in_ = BotClient.logged_in
         self.somebool = False
@@ -835,6 +836,7 @@ class BotClient(commands.Bot):
                 name="Type {0}commands for info.".format(self.command_prefix),
                 url="https://twitch.tv/decoraterbot"),
             intents=discord.Intents.default(),
+            command_prefix=self.command_prefix,
             **kwargs)
         self.dbapi = dbapi.DBAPI(self, self.BotConfig.api_token)
         self.BotPMError = BotPMError(self)
@@ -1061,7 +1063,7 @@ class BotClient(commands.Bot):
         self.discord_logger()
         self.changewindowtitle()
         # if self.BotConfig.change_console_size:
-        self.changewindowsize()
+        #     self.changewindowsize()
         self.load_all_default_plugins()
         self.variable()
         self.login_helper()
