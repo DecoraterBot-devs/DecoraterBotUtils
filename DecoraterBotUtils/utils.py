@@ -830,7 +830,12 @@ class BotClient(commands.Bot):
         self.rejoin_after_reload = False
         self.sent_prune_error_message = False
         self.is_bot_logged_in = False
-        super(BotClient, self).__init__(**kwargs)
+        super(BotClient, self).__init__(
+            activity=discord.Streaming(
+                name="Type {0}commands for info.".format(self.command_prefix),
+                url="https://twitch.tv/decoraterbot"),
+            intents=discord.Intents.default(),
+            **kwargs)
         self.dbapi = dbapi.DBAPI(self, self.BotConfig.api_token)
         self.BotPMError = BotPMError(self)
         # Deprecated.
