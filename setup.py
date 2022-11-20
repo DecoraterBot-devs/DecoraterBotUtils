@@ -23,7 +23,6 @@ setup_args = dict(
     dependency_links=[
         "git+https://github.com/IzunaDevs/TinyURL.git@indev",
         "git+https://github.com/IzunaDevs/consolechange.git",
-        "git+https://github.com/IzunaDevs/dbapi.git",
     ],
 )
 

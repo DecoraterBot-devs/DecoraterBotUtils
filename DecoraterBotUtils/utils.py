@@ -9,7 +9,6 @@ import sys
 import traceback
 
 import consolechange
-import dbapi
 import discord
 from discord.ext import commands
 import aiohttp
@@ -838,7 +837,6 @@ class BotClient(commands.Bot):
             intents=discord.Intents.default(),
             command_prefix=self.command_prefix,
             **kwargs)
-        self.dbapi = dbapi.DBAPI(self, self.BotConfig.api_token)
         self.BotPMError = BotPMError(self)
         # Deprecated.
         self.resolve_send_message_error = (
@@ -1046,13 +1044,13 @@ class BotClient(commands.Bot):
         consolechange.consoletitle(
             self.consoletext['WindowName'][0] + self.version)
 
-    def changewindowsize(self):
-        """
-        Changes the Console's size.
-        """
-        # not used but avoids issues with this being a classmethod.
-        type(self)
-        consolechange.consolesize(80, 23)
+    # def changewindowsize(self):
+    #     """
+    #     Changes the Console's size.
+    #     """
+    #     # not used but avoids issues with this being a classmethod.
+    #     type(self)
+    #     consolechange.consolesize(80, 23)
 
     def call_all(self):
         """
