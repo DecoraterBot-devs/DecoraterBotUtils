@@ -10,8 +10,10 @@ import traceback
 
 import consolechange
 import discord
+from discord import app_commands
 from discord.ext import commands
 import aiohttp
+from colorama import Fore, Back, Style, init
 
 from .BotErrors import *
 
@@ -25,7 +27,7 @@ __all__ = [
     'BotPMError', 'BotCredentialsVars', 'CreditsReader',
     'PluginTextReader', 'PluginConfigReader', 'make_version',
     'PluginInstaller', 'log_writer', 'CogLogger',
-    'config', 'BotClient', 'TinyURLContainer']
+    'config', 'BotClient', 'Checks']
 
 
 def get_plugin_full_name(plugin_name):
@@ -74,23 +76,22 @@ class BotPMError:
     def __init__(self, bot):
         self.bot = bot
 
-    async def resolve_send_message_error(self, ctx):
+    async def resolve_send_message_error(self, interaction: discord.Interaction):
         """
         Resolves errors when sending messages.
         """
-        await self.resolve_send_message_error_old(
-            ctx.message)
+        await self.resolve_send_message_error_old(interaction)
 
-    async def resolve_send_message_error_old(self, message):
+    async def resolve_send_message_error_old(self, interaction: discord.Interaction):
         """
         Resolves errors when sending messages.
         """
         try:
             await self.bot.send_message(
-                message.author,
-                content=construct_reply(
-                    message,
-                    self.bot.consoletext['error_message'][0]))
+                interaction.user,
+                content=self.bot.consoletext['error_message'][0].format(
+                    interaction.guild.name,
+                    interaction.channel.name))
         except discord.errors.Forbidden:
             return
 
@@ -363,8 +364,8 @@ def make_version(pluginname, pluginversion,
 
 class PluginInstaller:
     """
-    Class that implements all of the Plugin
-    Instalation / updating system for
+    Class that implements all the Plugin
+    Installation / updating system for
     DecoraterBot.
     """
     def __init__(self, connector=None, loop=None):
@@ -634,12 +635,9 @@ class BotClient(commands.Bot):
     Bot Main client Class.
     This is where the Events are Registered.
     """
-    logged_in = False
-
-    def __init__(self, command_prefix, **kwargs):
-        self.command_prefix = command_prefix
+    def __init__(self, **kwargs):
         self._start = time.time()
-        self.logged_in_ = BotClient.logged_in
+        self.logged_in_ = False
         self.somebool = False
         self.reload_normal_commands = False
         self.reload_reason = None
@@ -650,16 +648,19 @@ class BotClient(commands.Bot):
         self.is_bot_logged_in = False
         super(BotClient, self).__init__(
             activity=discord.Streaming(
-                name="Type {0}commands for info.".format(self.command_prefix),
+                name=self.consoletext['On_Ready_Game'][0],
                 url=self.BotConfig.twitch_url),
             intents=discord.Intents.default(),
-            command_prefix=self.command_prefix,
             **kwargs)
         self.BotPMError = BotPMError(self)
+        self.logger = CogLogger(self)
         # Deprecated.
         self.resolve_send_message_error = (
             self.BotPMError.resolve_send_message_error)
         self.call_all()
+
+    async def setup_hook(self) -> None:
+        await self.load_all_default_plugins()
 
     @property
     def version(self):
@@ -722,18 +723,6 @@ class BotClient(commands.Bot):
         return CreditsReader(file="credits.json")
 
     @property
-    def ignoreslist(self):
-        """
-        returns the current ignores list.
-        """
-        try:
-            ret = PluginConfigReader(file='IgnoreList.json')
-        except FileNotFoundError:
-            print(str(self.consoletext['Missing_JSON_Errors'][0]))
-            sys.exit(2)
-        return ret
-
-    @property
     def credentials_check(self):
         """
         Checks if the Credentials.json
@@ -743,33 +732,33 @@ class BotClient(commands.Bot):
             sys.path[0], 'resources', 'ConfigData', 'Credentials.json')
         return os.path.isfile(PATH) and os.access(PATH, os.R_OK)
 
-    def load_all_default_plugins(self):
+    async def load_all_default_plugins(self):
         """
         Handles loading all plugins that __init__
         used to load up.
         """
         self.remove_command("help")
         for plugins_cog in self.BotConfig.default_plugins:
-            ret = self.load_plugin(plugins_cog)
+            ret = await self.load_plugin(plugins_cog)
             if isinstance(ret, str):
                 print(ret)
 
-    def load_bot_extension(self, extension_full_name):
+    async def load_bot_extension(self, extension_full_name):
         """
         loads an bot extension module.
         """
         try:
-            self.load_extension(extension_full_name)
+            await self.load_extension(extension_full_name)
         except Exception:
             return str(traceback.format_exc())
 
-    def unload_bot_extension(self, extension_full_name):
+    async def unload_bot_extension(self, extension_full_name):
         """
         unloads an bot extension module.
         """
-        self.unload_extension(extension_full_name)
+        await self.unload_extension(extension_full_name)
 
-    def load_plugin(self, plugin_name, raiseexec=True):
+    async def load_plugin(self, plugin_name, raiseexec=True):
         """
         Loads up a plugin in the plugins folder in DecoraterBotCore.
         """
@@ -778,11 +767,11 @@ class BotClient(commands.Bot):
             if raiseexec:
                 raise ImportError(
                     "Plugin Name cannot be empty.")
-        err = self.load_bot_extension(pluginfullname)
+        err = await self.load_bot_extension(pluginfullname)
         if err is not None:
             return err
 
-    def unload_plugin(self, plugin_name, raiseexec=True):
+    async def unload_plugin(self, plugin_name, raiseexec=True):
         """
         Unloads a plugin in the plugins folder in DecoraterBotCore.
         """
@@ -791,14 +780,14 @@ class BotClient(commands.Bot):
             if raiseexec:
                 raise CogUnloadError(
                     "Plugin Name cannot be empty.")
-        self.unload_bot_extension(pluginfullname)
+        await self.unload_bot_extension(pluginfullname)
 
-    def reload_plugin(self, plugin_name):
+    async def reload_plugin(self, plugin_name):
         """
         Reloads a plugin in the plugins folder in DecoraterBotCore.
         """
-        self.unload_plugin(plugin_name, raiseexec=False)
-        err = self.load_plugin(plugin_name)
+        await self.unload_plugin(plugin_name, raiseexec=False)
+        err = await self.load_plugin(plugin_name)
         if err is not None:
             return err
 
@@ -880,17 +869,15 @@ class BotClient(commands.Bot):
         self.changewindowtitle()
         # if self.BotConfig.change_console_size:
         #     self.changewindowsize()
-        self.load_all_default_plugins()
-        self.variable()
-        self.login_helper()
+        # self.login_helper()
 
-    def login_helper(self):
+    async def login_helper(self):
         """
         Bot Login Helper.
         """
-        self.login_info()
+        await self.login_info()
 
-    def login_info(self):
+    async def login_info(self):
         """
         Allows the bot to Connect / Reconnect.
         :return: Nothing or -1/-2 on failure.
@@ -908,8 +895,8 @@ class BotClient(commands.Bot):
             try:
                 if self.BotConfig.bot_token is not None:
                     self.is_bot_logged_in = True
-                    self.loop.run_until_complete(self.start(
-                        self.BotConfig.bot_token))
+                    await self.start(
+                        self.BotConfig.bot_token)
             except discord.errors.GatewayNotFound:
                 print(str(self.consoletext['Login_Gateway_No_Find'][0]))
                 return
@@ -927,30 +914,86 @@ class BotClient(commands.Bot):
             except Exception:
                 pass
 
-    def variable(self):
+    async def on_command_error(self, error, ctx: commands.Context):
+        """..."""
+        tbinfo = traceback.format_exception(
+            type(error), error, error.__traceback__)
+        if ctx.command is not None:
+            print("exception in command {0}:```py\n{1}```".format(
+                ctx.command,
+                self.command_traceback_helper(tbinfo)))
+        elif ctx.interaction is not None:
+            print("exception in interaction {0}:```py\n{1}```".format(
+                ctx.interaction,
+                self.command_traceback_helper(tbinfo)))
+
+    async def on_ready(self):
         """
-        Function that makes Certain things on the
-        on_ready event only happen 1
-        time only. (e.g. the logged in printing stuff)
+        Bot Event.
+        :return: Nothing.
         """
-        if not BotClient.logged_in:
-            BotClient.logged_in = True
+        await self.tree.sync()
+        try:
+            await self.on_bot_login()
+        except Exception as e:
+            funcname = 'on_ready'
+            tbinfo = str(traceback.format_exc())
+            self.logger.on_bot_error(funcname, tbinfo, e)
+
+    async def on_bot_login(self):
+        """
+        Function that does the on_ready event stuff after logging in.
+        :return: Nothing.
+        """
+        if self.logged_in_ is False:
             self.logged_in_ = True
+            bot_name = self.user.name
+            init()
+            print(Fore.GREEN + Back.BLACK + Style.BRIGHT + str(
+                self.consoletext['Window_Login_Text'][0]).format(
+                bot_name, self.user.id, discord.__version__))
+            sys.stdout = open(os.path.join(
+                sys.path[0], 'resources', 'Logs', 'console.log'),
+                'w')
+            sys.stderr = open(os.path.join(
+                sys.path[0], 'resources', 'Logs',
+                'unhandled_tracebacks.log'), 'w')
 
-
-class TinyURLContainer:
-    """
-    handles all the TinyURL stuff,
-    """
-    def __init__(self, TinyURL):
-        self.TinyURL = TinyURL
-        self.link = ""
-        # holds the bool to the errors.
-        self.tinyurlerror = False
-
-    def create_one(self, url):
+    async def on_error(self, event, *args, **kwargs):
         """
-        creates a shortened url.
+        Bot Event.
+        :param event: Event.
+        :param args: Args.
+        :param kwargs: Other Args.
+        :return: Nothing.
         """
-        self.link = str(
-            self.TinyURL.create_one(url))
+        str(args)
+        str(kwargs)
+        funcname = event
+        tbinfo = str(traceback.format_exc())
+        self.logger.on_bot_error(funcname, tbinfo, None)
+
+    # Helpers.
+    def command_traceback_helper(self, tbinfo):
+        """
+        Helps iterate through a list of every
+        line in a command's traceback.
+        """
+        tracebackdata = ""
+        for line in tbinfo:
+            tracebackdata = tracebackdata + line
+        return tracebackdata
+
+
+class Checks:
+    @staticmethod
+    def is_bot_owner():
+        def predicate(interaction: discord.Interaction) -> bool:
+            return interaction.user.id == interaction.client.BotConfig.discord_user_id
+        return app_commands.check(predicate)
+
+    @staticmethod
+    def is_user_bot_banned():
+        def predicate(interaction: discord.Interaction) -> bool:
+            return interaction.user.id not in interaction.client.banlist['Users']
+        return app_commands.check(predicate)

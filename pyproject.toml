@@ -27,7 +27,13 @@ classifiers = [
     "Topic :: Software Development :: Libraries",
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
-dependencies = ['regex', 'colorama', 'discord.py', 'aiohttp']
+dependencies = [
+    'regex',
+    'colorama',
+    'discord.py',
+    'aiohttp',
+    'consolechange @ git+https://github.com/IzunaDevs/consolechange.git'
+]
 
 [project.urls]
 "Homepage" = "https://github.com/DecoraterBot-devs/DecoraterBotUtils"

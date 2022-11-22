@@ -8,8 +8,8 @@ def get_extensions():
     """
     if sys.platform != 'cygwin':
         BotErrors = Extension(
-            'DecoraterBotUtils.BotErrors', [
-                'DecoraterBotUtils/BotErrors.c'])
+            'DecoraterBotUtils.BotErrors',
+            sources=['DecoraterBotUtils/BotErrors.c'])
     else:
         BotErrors = Extension(
             'DecoraterBotUtils.BotErrors',
@@ -19,11 +19,6 @@ def get_extensions():
 
 
 setup_args = dict(
-    ext_modules=get_extensions(),
-    dependency_links=[
-        "git+https://github.com/IzunaDevs/TinyURL.git@indev",
-        "git+https://github.com/IzunaDevs/consolechange.git",
-    ],
-)
+    ext_modules=get_extensions())
 
 setup(**setup_args)
