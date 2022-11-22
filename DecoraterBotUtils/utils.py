@@ -654,6 +654,7 @@ class BotClient(commands.Bot):
                 url=self.BotConfig.twitch_url),
             intents=discord.Intents.default(),
             **kwargs)
+        self.tree.on_error = self.on_app_command_error
         self.BotPMError = BotPMError(self)
         self.logger = CogLogger(self)
         # Deprecated.
@@ -916,18 +917,15 @@ class BotClient(commands.Bot):
             except Exception:
                 pass
 
-    async def on_command_error(self, error, ctx: commands.Context):
+    async def on_app_command_error(self, interaction: discord.Interaction, error: app_commands.AppCommandError):
         """..."""
-        tbinfo = traceback.format_exception(
-            type(error), error, error.__traceback__)
-        if ctx.command is not None:
-            print("exception in command {0}:```py\n{1}```".format(
-                ctx.command,
-                self.command_traceback_helper(tbinfo)))
-        elif ctx.interaction is not None:
-            print("exception in interaction {0}:```py\n{1}```".format(
-                ctx.interaction,
-                self.command_traceback_helper(tbinfo)))
+        exceptioninfo = "".join(traceback.format_exception(error))
+        if isinstance(error, app_commands.CommandInvokeError):
+            await interaction.response.send_message(f"Error: ```py\n{exceptioninfo}\n``` (Invoke Error)")
+        elif isinstance(error, app_commands.CheckFailure):
+            await interaction.response.send_message(f"Error: ```py\n{exceptioninfo}\n``` (Check Failure)")
+        else:
+            pass
 
     async def on_ready(self):
         """
@@ -991,7 +989,7 @@ class Checks:
     @staticmethod
     def is_bot_owner():
         def predicate(interaction: discord.Interaction) -> bool:
-            return interaction.user.id == interaction.client.BotConfig.discord_user_id
+            return interaction.user.id == int(interaction.client.BotConfig.discord_user_id)
         return app_commands.check(predicate)
 
     @staticmethod
