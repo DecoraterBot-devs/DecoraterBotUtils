@@ -9,9 +9,10 @@ Various things to DecoraterBot.
 :license: MIT, see LICENSE for more details.
 
 """
-from . import utils
+from . import client
 from . import readers
+from .checks import *
 
 # These are external things for DecoraterBot's Core.
 
-__all__ = (utils.__all__, readers.__all__)
+__all__ = (client.__all__, readers.__all__, ['Checks'])

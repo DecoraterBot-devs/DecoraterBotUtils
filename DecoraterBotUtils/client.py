@@ -1,5 +1,6 @@
+# coding=utf-8
 """
-Utils for DecoraterBot.
+Client for DecoraterBot.
 """
 import logging
 import time
@@ -15,34 +16,7 @@ from colorama import Fore, Back, Style, init
 
 from .readers import *
 
-
-__all__ = [
-    'BotPMError', 'config',
-    'BotClient', 'Checks']
-
-
-# TODO: Place the code in this class with a global on_command_error.
-class BotPMError:
-    """
-    Class for PMing bot errors.
-    """
-    def __init__(self, bot):
-        self.bot = bot
-
-    async def resolve_send_message_error(self, interaction: discord.Interaction):
-        """
-        Resolves errors when sending messages.
-        """
-        try:
-            await interaction.user.send(
-                content=self.bot.consoletext['error_message'][0].format(
-                    interaction.guild.name,
-                    interaction.channel.name))
-        except discord.errors.Forbidden:
-            return
-
-
-config = BotCredentialsReader()
+__all__ = ['config', 'BotClient']
 
 
 class BotClient(commands.Bot):
@@ -67,13 +41,10 @@ class BotClient(commands.Bot):
             activity=discord.Streaming(
                 name=self.consoletext['On_Ready_Game'][0],
                 url=self.BotConfig.twitch_url),
+            # intents=self.bot_intents,
             intents=discord.Intents.default(),
             **kwargs)
         self.tree.on_error = self.on_app_command_error
-        self.BotPMError = BotPMError(self)
-        # Deprecated.
-        self.resolve_send_message_error = (
-            self.BotPMError.resolve_send_message_error)
         self.call_all()
 
     async def setup_hook(self) -> None:
@@ -417,6 +388,18 @@ class BotClient(commands.Bot):
         self.on_bot_error(funcname, tbinfo, None)
 
     # Helpers.
+    async def resolve_send_message_error(self, interaction: discord.Interaction):
+        """
+        Resolves errors when sending messages.
+        """
+        try:
+            await interaction.user.send(
+                content=self.consoletext['error_message'][0].format(
+                    interaction.guild.name,
+                    interaction.channel.name))
+        except discord.errors.Forbidden:
+            return
+
     def command_traceback_helper(self, tbinfo):
         """
         Helps iterate through a list of every
@@ -427,16 +410,10 @@ class BotClient(commands.Bot):
             tracebackdata = tracebackdata + line
         return tracebackdata
 
+    # def bot_intents(self) -> discord.Intents:
+    #     _intents = discord.Intents.default()
+    #     _intents.members = True
+    #     return _intents
 
-class Checks:
-    @staticmethod
-    def is_bot_owner():
-        def predicate(interaction: discord.Interaction) -> bool:
-            return interaction.user.id == int(interaction.client.BotConfig.discord_user_id)
-        return app_commands.check(predicate)
 
-    @staticmethod
-    def is_user_bot_banned():
-        def predicate(interaction: discord.Interaction) -> bool:
-            return interaction.user.id not in interaction.client.banlist['Users']
-        return app_commands.check(predicate)
+config = BotCredentialsReader()

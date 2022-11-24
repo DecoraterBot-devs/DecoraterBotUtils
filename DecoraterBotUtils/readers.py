@@ -1,5 +1,6 @@
+# coding=utf-8
 """
-readers for DecoraterBot.
+Readers for DecoraterBot.
 """
 import json
 import os
