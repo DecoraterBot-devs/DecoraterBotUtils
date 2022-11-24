@@ -13,7 +13,6 @@ from discord import app_commands
 from discord.ext import commands
 from colorama import Fore, Back, Style, init
 
-from .BotErrors import *
 from .readers import *
 
 

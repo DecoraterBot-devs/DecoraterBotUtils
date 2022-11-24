@@ -9,10 +9,9 @@ Various things to DecoraterBot.
 :license: MIT, see LICENSE for more details.
 
 """
-from . import BotErrors
 from . import utils
 from . import readers
 
 # These are external things for DecoraterBot's Core.
 
-__all__ = (dir(BotErrors), utils.__all__, readers.__all__)
+__all__ = (utils.__all__, readers.__all__)
