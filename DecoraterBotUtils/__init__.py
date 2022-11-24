@@ -11,7 +11,8 @@ Various things to DecoraterBot.
 """
 from . import BotErrors
 from . import utils
+from . import readers
 
 # These are external things for DecoraterBot's Core.
 
-__all__ = (dir(BotErrors), utils.__all__)
+__all__ = (dir(BotErrors), utils.__all__, readers.__all__)
