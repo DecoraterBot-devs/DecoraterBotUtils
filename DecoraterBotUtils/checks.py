@@ -16,5 +16,5 @@ class Checks:
     @staticmethod
     def is_user_bot_banned():
         def predicate(interaction: discord.Interaction) -> bool:
-            return interaction.user.id not in interaction.client.banlist['Users']
+            return interaction.user.id not in interaction.client.banlist.getconfig('Users')
         return app_commands.check(predicate)
