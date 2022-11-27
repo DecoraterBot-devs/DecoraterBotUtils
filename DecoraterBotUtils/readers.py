@@ -133,8 +133,6 @@ class BotCredentialsReader(BaseConfigReader):
         super(BotCredentialsReader, self).__init__(file='Credentials.json')
 
         # defaults.
-        self.logbans = False  # bool
-        self.logunbans = False  # bool
         self.discord_logger = False  # bool
         self.asyncio_logger = False  # bool
         self.is_official_bot = False  # bool
@@ -147,8 +145,6 @@ class BotCredentialsReader(BaseConfigReader):
         self.bot_token = ''  # string
         self.language = 'en'  # string
         self.description = ''  # string
-        self.shards = 0  # int
-        self.run_on_shard = 0  # int
         self.twitch_url = ''  # string
         self.youtube_url = ''  # string
         self.default_plugins = []  # list
@@ -160,16 +156,6 @@ class BotCredentialsReader(BaseConfigReader):
         """
         sets values of the variables.
         """
-        try:
-            self.logbans = self.getconfig(
-                'logbans')  # bool
-        except (KeyError, TypeError):
-            pass
-        try:
-            self.logunbans = self.getconfig(
-                'logunbans')  # bool
-        except (KeyError, TypeError):
-            pass
         try:
             self.discord_logger = self.getconfig(
                 'discord_py_logger')  # bool
@@ -186,11 +172,6 @@ class BotCredentialsReader(BaseConfigReader):
         except (KeyError, TypeError):
             pass
         try:
-            self.pm_commands_list = self.getconfig(
-                'PM_Commands')  # bool
-        except (KeyError, TypeError):
-            pass
-        try:
             self.log_error = self.getconfig(
                 'log_error')  # bool
         except (KeyError, TypeError):
@@ -202,11 +183,6 @@ class BotCredentialsReader(BaseConfigReader):
             pass
         self.enable_error_handler = (
             True if not self.pm_command_errors else False)  # bool
-        try:
-            self.bot_prefix = self.getconfig(
-                'bot_prefix')  # string
-        except (KeyError, TypeError):
-            pass
         try:
             self.discord_user_id = self.getconfig(
                 'ownerid')  # string
@@ -225,16 +201,6 @@ class BotCredentialsReader(BaseConfigReader):
         try:
             self.description = self.getconfig(
                 'description')  # string
-        except (KeyError, TypeError):
-            pass
-        try:
-            self.shards = self.getconfig(
-                'shards')  # int
-        except (KeyError, TypeError):
-            pass
-        try:
-            self.run_on_shard = self.getconfig(
-                'run_on_shard')  # int
         except (KeyError, TypeError):
             pass
         try:

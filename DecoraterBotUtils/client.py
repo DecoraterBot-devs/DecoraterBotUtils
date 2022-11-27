@@ -76,16 +76,6 @@ class BotClient(commands.Bot):
         return consoledata
 
     @property
-    def banlist(self):
-        """
-        returns the list of users banned
-        from using the bot.
-        """
-        type(self)
-        return PluginConfigReader(
-            file='BotBanned.json')
-
-    @property
     def commands_list(self):
         """
         retrieves a list of all the bot's registered commands.

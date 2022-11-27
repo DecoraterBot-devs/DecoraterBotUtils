@@ -12,9 +12,3 @@ class Checks:
         def predicate(interaction: discord.Interaction) -> bool:
             return interaction.user.id == int(interaction.client.BotConfig.discord_user_id)
         return app_commands.check(predicate)
-
-    @staticmethod
-    def is_user_bot_banned():
-        def predicate(interaction: discord.Interaction) -> bool:
-            return interaction.user.id not in interaction.client.banlist.getconfig('Users')
-        return app_commands.check(predicate)
