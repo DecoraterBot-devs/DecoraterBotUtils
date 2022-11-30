@@ -36,7 +36,7 @@ class BotClient(commands.Bot):
         self.sent_prune_error_message = False
         self.is_bot_logged_in = False
         super(BotClient, self).__init__(
-            command_prefix='',
+            command_prefix=config.bot_prefix,
             status=discord.Status.online,
             activity=discord.Streaming(
                 name=self.consoletext['On_Ready_Game'][0],
