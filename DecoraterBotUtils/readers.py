@@ -105,8 +105,6 @@ class BotCredentialsReader(BaseConfigReader):
         super(BotCredentialsReader, self).__init__(file='Credentials.json')
 
         # defaults.
-        self.discord_logger = False  # bool
-        self.asyncio_logger = False  # bool
         self.log_error = False  # bool
         self.pm_command_errors = False  # bool
         self.enable_error_handler = False  # bool
@@ -124,16 +122,6 @@ class BotCredentialsReader(BaseConfigReader):
         """
         sets values of the variables.
         """
-        try:
-            self.discord_logger = self.getconfig(
-                'discord_py_logger')  # bool
-        except (KeyError, TypeError):
-            pass
-        try:
-            self.asyncio_logger = self.getconfig(
-                'asyncio_logger')  # bool
-        except (KeyError, TypeError):
-            pass
         try:
             self.log_error = self.getconfig(
                 'log_error')  # bool

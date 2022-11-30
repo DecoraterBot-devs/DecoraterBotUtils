@@ -159,59 +159,6 @@ class BotClient(commands.Bot):
         if err is not None:
             return err
 
-    def discord_logger(self):
-        """
-        Logger Data.
-        """
-        if self.BotConfig.discord_logger:
-            self.set_up_discord_logger()
-
-    def asyncio_logger(self):
-        """
-        Asyncio Logger.
-        """
-        if self.BotConfig.asyncio_logger:
-            self.set_up_asyncio_logger()
-
-    def set_up_loggers(self, loggers=None):
-        """
-        Logs Events from discord and/or asyncio stuff.
-        """
-        if loggers is not None:
-            if loggers == 'discord':
-                logger = logging.getLogger('discord')
-                logger.setLevel(logging.DEBUG)
-                handler = logging.FileHandler(
-                    filename=os.path.join(
-                        sys.path[0], 'resources', 'Logs', 'discordpy.log'),
-                    encoding='utf-8', mode='w')
-                handler.setFormatter(logging.Formatter(
-                    '%(asctime)s:%(levelname)s:%(name)s: %(message)s'))
-                logger.addHandler(handler)
-            elif loggers == 'asyncio':
-                self.loop.set_debug(True)
-                asynciologger = logging.getLogger('asyncio')
-                asynciologger.setLevel(logging.DEBUG)
-                asynciologgerhandler = logging.FileHandler(
-                    filename=os.path.join(
-                        sys.path[0], 'resources', 'Logs', 'asyncio.log'),
-                    encoding='utf-8', mode='w')
-                asynciologgerhandler.setFormatter(logging.Formatter(
-                    '%(asctime)s:%(levelname)s:%(name)s: %(message)s'))
-                asynciologger.addHandler(asynciologgerhandler)
-
-    def set_up_discord_logger(self):
-        """
-        Sets up the Discord Logger.
-        """
-        self.set_up_loggers(loggers='discord')
-
-    def set_up_asyncio_logger(self):
-        """
-        Sets up the asyncio Logger.
-        """
-        self.set_up_loggers(loggers='asyncio')
-
     def changewindowtitle(self):
         """
         Changes the console's window Title.
@@ -219,25 +166,15 @@ class BotClient(commands.Bot):
         consolechange.consoletitle(
             self.consoletext['WindowName'][0] + self.version)
 
-    # def changewindowsize(self):
-    #     """
-    #     Changes the Console's size.
-    #     """
-    #     # not used but avoids issues with this being a classmethod.
-    #     type(self)
-    #     consolechange.consolesize(80, 23)
-
     def call_all(self):
         """
         calls all functions that __init__ used to
         call except for super.
         """
-        self.asyncio_logger()
-        self.discord_logger()
+        formatter = logging.Formatter('%(asctime)s:%(levelname)s:%(name)s: %(message)s')
+        level = logging.INFO
+        discord.utils.setup_logging(formatter=formatter, level=level)
         self.changewindowtitle()
-        # if self.BotConfig.change_console_size:
-        #     self.changewindowsize()
-        # self.login_helper()
 
     async def login_helper(self):
         """
