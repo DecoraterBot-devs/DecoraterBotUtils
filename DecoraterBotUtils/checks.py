@@ -10,5 +10,5 @@ class Checks:
     @staticmethod
     def is_bot_owner():
         def predicate(interaction: discord.Interaction) -> bool:
-            return interaction.client.is_owner(interaction.user.id)
+            return interaction.client.is_owner(interaction.user)
         return app_commands.check(predicate)
