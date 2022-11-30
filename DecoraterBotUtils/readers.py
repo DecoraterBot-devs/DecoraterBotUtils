@@ -8,7 +8,6 @@ import sys
 
 __all__ = [
     'BaseConfigReader', 'PluginConfigReader',
-    'CreditsReader', 'PluginTextReader',
     'BotCredentialsReader']
 
 
@@ -16,9 +15,8 @@ class BaseConfigReader:
     """
     Base config Class.
     """
-    def __init__(self, file=None, plugin=False):
+    def __init__(self, file=None):
         self.config = None
-        self.plugin = plugin
         self.filename = file
         self.file = None
         self.json_file = None
@@ -29,14 +27,9 @@ class BaseConfigReader:
         Loads the JSON config Data.
         :return: List.
         """
-        if self.plugin:
-            self.json_file = os.path.join(
-                sys.path[0], 'resources', 'ConfigData',
-                'plugins', self.filename)
-        else:
-            self.json_file = os.path.join(
-                sys.path[0], 'resources', 'ConfigData',
-                self.filename)
+        self.json_file = os.path.join(
+            sys.path[0], 'resources', 'ConfigData',
+            self.filename)
         try:
             with open(self.json_file) as self.file:
                 self.config = json.load(self.file)
@@ -104,27 +97,6 @@ class PluginConfigReader(BaseConfigReader):
             pass
 
 
-class CreditsReader(PluginConfigReader):
-    """
-    Obtains Data from credits.json
-    """
-    def __init__(self, file=None):
-        super(CreditsReader, self).__init__(file=file, credits=True)
-
-
-class PluginTextReader(BaseConfigReader):
-    """
-    Class for getting plugin text values.
-    """
-
-    def __init__(self, file=None):
-        super(PluginTextReader, self).__init__(file=file, plugin=True)
-
-    @property
-    def get_config(self):
-        return self.config
-
-
 class BotCredentialsReader(BaseConfigReader):
     """
     Class for getting the Credentials.json config Values.
@@ -135,18 +107,14 @@ class BotCredentialsReader(BaseConfigReader):
         # defaults.
         self.discord_logger = False  # bool
         self.asyncio_logger = False  # bool
-        self.is_official_bot = False  # bool
-        self.pm_commands_list = False  # bool
         self.log_error = False  # bool
         self.pm_command_errors = False  # bool
         self.enable_error_handler = False  # bool
         self.bot_prefix = ''  # string
-        self.discord_user_id = ''  # string
         self.bot_token = ''  # string
         self.language = 'en'  # string
         self.description = ''  # string
         self.twitch_url = ''  # string
-        self.youtube_url = ''  # string
         self.default_plugins = []  # list
 
         # populate the values from Credentials.json.
@@ -167,11 +135,6 @@ class BotCredentialsReader(BaseConfigReader):
         except (KeyError, TypeError):
             pass
         try:
-            self.is_official_bot = self.getconfig(
-                'Is_Official_Bot_Account')  # bool
-        except (KeyError, TypeError):
-            pass
-        try:
             self.log_error = self.getconfig(
                 'log_error')  # bool
         except (KeyError, TypeError):
@@ -183,11 +146,6 @@ class BotCredentialsReader(BaseConfigReader):
             pass
         self.enable_error_handler = (
             True if not self.pm_command_errors else False)  # bool
-        try:
-            self.discord_user_id = self.getconfig(
-                'ownerid')  # string
-        except (KeyError, TypeError):
-            pass
         try:
             self.bot_token = self.getconfig(
                 'token')  # string
@@ -206,11 +164,6 @@ class BotCredentialsReader(BaseConfigReader):
         try:
             self.twitch_url = self.getconfig(
                 'twitch_url')  # string
-        except (KeyError, TypeError):
-            pass
-        try:
-            self.youtube_url = self.getconfig(
-                'youtube_url')  # string
         except (KeyError, TypeError):
             pass
         try:

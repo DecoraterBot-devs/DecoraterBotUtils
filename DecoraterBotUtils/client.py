@@ -98,7 +98,7 @@ class BotClient(commands.Bot):
         returns the stuff that the Credits reader returns.
         """
         type(self)
-        return CreditsReader(file="credits.json")
+        return PluginConfigReader(file="credits.json", credits=True)
 
     @property
     def credentials_check(self):
