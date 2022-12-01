@@ -35,7 +35,8 @@ class BotClient(commands.Bot):
         self.rejoin_after_reload = False
         self.sent_prune_error_message = False
         self.is_bot_logged_in = False
-        self.consoletext = BaseConfigReader(file='ConsoleWindow.json')[config.language]
+        with BaseConfigReader(file='ConsoleWindow.json') as reader:
+            self.consoletext = reader[config.language]
         super(BotClient, self).__init__(
             command_prefix=config.bot_prefix,
             status=discord.Status.online,
@@ -46,6 +47,7 @@ class BotClient(commands.Bot):
             intents=discord.Intents.default(),
             **kwargs)
         self.stdout = open(os.path.join(sys.path[0], 'resources', 'Logs', 'console.log'), 'w')
+        self.stderr = open(os.path.join(sys.path[0], 'resources', 'Logs', 'unhandled_tracebacks.log'), 'w')
         self.tree.on_error = self.on_app_command_error
         self.call_all()
 
@@ -181,9 +183,7 @@ class BotClient(commands.Bot):
                 self.consoletext['Window_Login_Text'][0]).format(
                 self.user.name, self.user.id, discord.__version__))
             sys.stdout = self.stdout
-            sys.stderr = open(os.path.join(
-                sys.path[0], 'resources', 'Logs',
-                'unhandled_tracebacks.log'), 'w')
+            sys.stderr = self.stderr
 
     # Helpers.
     async def resolve_send_message_error(self, interaction: discord.Interaction):
@@ -201,6 +201,7 @@ class BotClient(commands.Bot):
     # def bot_intents(self) -> discord.Intents:
     #     _intents = discord.Intents.default()
     #     _intents.members = True
+    #     _intents.presences = True
     #     return _intents
 
 

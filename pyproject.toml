@@ -32,6 +32,7 @@ dependencies = [
     'colorama',
     'discord.py',
     'aiohttp',
+    'aiofiles',
     'consolechange @ git+https://github.com/IzunaDevs/consolechange.git'
 ]
 

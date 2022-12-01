@@ -6,6 +6,8 @@ import json
 import os
 import sys
 
+import aiofiles
+
 __all__ = ['BaseConfigReader', 'BotCredentialsReader']
 
 
@@ -16,9 +18,24 @@ class BaseConfigReader:
     def __init__(self, file=None):
         self.config = None
         self.filename = file
-        self.found = False
         self.json_file = os.path.join(sys.path[0], 'resources', 'ConfigData', self.filename)
+        self.found = os.path.isfile(self.json_file) and os.access(self.json_file, os.R_OK)
+
+    async def __aenter__(self):
+        await self.load_async()
+        return self
+
+    async def __aexit__(self, *exc):
+        await self.save_async()
+        return
+
+    def __enter__(self):
         self.load()
+        return self
+
+    def __exit__(self, *exc):
+        self.save()
+        return
 
     def __getitem__(self, item):
         """
@@ -36,21 +53,41 @@ class BaseConfigReader:
         """
         self.config[key] = value
 
+    def __del__(self):
+        self.config = None
+        self.filename = None
+        self.json_file = None
+        self.found = None
+
     def load(self):
         """
         Loads the JSON config Data.
         :return: List.
         """
-        self.found = os.path.isfile(self.json_file) and os.access(self.json_file, os.R_OK)
         try:
             with open(self.json_file) as file:
                 self.config = json.load(file)
         except(OSError, IOError):
             pass
 
+    async def load_async(self):
+        """
+        Loads the JSON config Data.
+        :return: List.
+        """
+        try:
+            async with aiofiles.open(self.json_file) as file:
+                self.config = json.loads(await file.read())
+        except(OSError, IOError):
+            pass
+
     def save(self):
         with open(self.json_file, mode='w') as file:
             json.dump(self.config, file, indent=4, sort_keys=True)
+
+    async def save_async(self):
+        async with aiofiles.open(self.json_file, mode='w') as file:
+            await file.write(json.dumps(self.config, indent=4, sort_keys=True))
 
 
 class BotCredentialsReader(BaseConfigReader):
@@ -59,6 +96,10 @@ class BotCredentialsReader(BaseConfigReader):
     """
     def __init__(self):
         super(BotCredentialsReader, self).__init__(file='Credentials.json')
+
+        # manually run the load function so that way the json file
+        # gets loaded properly for the credential values to be properly set through this.
+        self.load()
 
         # defaults.
         self.log_error = False  # bool
