@@ -38,13 +38,15 @@ class BotClient(commands.Bot):
         with BaseConfigReader(file='ConsoleWindow.json') as reader:
             self.consoletext = reader[config.language]
         super(BotClient, self).__init__(
+            description=self.consoletext['description'],
             command_prefix=config.bot_prefix,
             status=discord.Status.online,
             activity=discord.Streaming(
                 name=self.consoletext['On_Ready_Game'][0],
-                url=config.twitch_url),
+                url=self.consoletext['twitch_url']),
             # intents=self.bot_intents,
             intents=discord.Intents.default(),
+            pm_help=False,
             **kwargs)
         self.stdout = open(os.path.join(sys.path[0], 'resources', 'Logs', 'console.log'), 'w')
         self.stderr = open(os.path.join(sys.path[0], 'resources', 'Logs', 'unhandled_tracebacks.log'), 'w')

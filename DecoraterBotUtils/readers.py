@@ -101,31 +101,8 @@ class BotCredentialsReader(BaseConfigReader):
         # gets loaded properly for the credential values to be properly set through this.
         self.load()
 
-        # defaults.
-        self.log_error = False  # bool
-        self.pm_command_errors = False  # bool
-        self.enable_error_handler = False  # bool
-
         # populate the values from Credentials.json.
         self.bot_prefix = self['bot_prefix']  # string
         self.bot_token = self['token']  # string
         self.language = self['language']  # string
-        self.description = self['description']  # string
-        self.twitch_url = self['twitch_url']  # string
         self.default_plugins = self['default_plugins']  # dict
-        self.set_values()
-
-    def set_values(self):
-        """
-        sets values of the variables.
-        """
-        try:
-            self.log_error = self['log_error']  # bool
-        except (KeyError, TypeError):
-            pass
-        try:
-            self.pm_command_errors = self['pm_command_errors']  # bool
-        except (KeyError, TypeError):
-            pass
-        self.enable_error_handler = (
-            True if not self.pm_command_errors else False)  # bool
