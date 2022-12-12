@@ -70,7 +70,7 @@ class BotClient(commands.Bot):
         loads a bot extension module.
         """
         try:
-            await self.load_extension(f'.plugins.{extension_name}', package='DecoraterBotCore')
+            await self.load_extension(f'cogs.{extension_name}')
         except Exception:
             return str(traceback.format_exc())
 
@@ -78,7 +78,7 @@ class BotClient(commands.Bot):
         """
         unloads a bot extension module.
         """
-        await self.unload_extension(f'.plugins.{extension_name}', package='DecoraterBotCore')
+        await self.unload_extension(f'cogs.{extension_name}')
 
     async def reload_bot_extension(self, plugin_name):
         """
