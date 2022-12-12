@@ -173,19 +173,6 @@ class BotClient(commands.Bot):
             sys.stderr = self.stderr
             await self.tree.sync()
 
-    # Helpers.
-    async def resolve_send_message_error(self, interaction: discord.Interaction):
-        """
-        Resolves errors when sending messages.
-        """
-        try:
-            await interaction.user.send(
-                content=self.consoletext['error_message'][0].format(
-                    interaction.guild.name,
-                    interaction.channel.name))
-        except discord.errors.Forbidden:
-            return
-
     # def bot_intents(self) -> discord.Intents:
     #     _intents = discord.Intents.default()
     #     _intents.members = True
