@@ -27,13 +27,6 @@ class BotClient(commands.Bot):
     def __init__(self, **kwargs):
         self.uptime_count_begin = time.time()
         self.logged_in_ = False
-        self.somebool = False
-        self.reload_normal_commands = False
-        self.reload_reason = None
-        self.desmod = None
-        self.desmod_new = None
-        self.rejoin_after_reload = False
-        self.sent_prune_error_message = False
         self.is_bot_logged_in = False
         with BaseConfigReader(file='ConsoleWindow.json') as reader:
             self.consoletext = reader[config.language]
@@ -51,23 +44,21 @@ class BotClient(commands.Bot):
         self.stdout = open(os.path.join(sys.path[0], 'resources', 'Logs', 'console.log'), 'w')
         self.stderr = open(os.path.join(sys.path[0], 'resources', 'Logs', 'unhandled_tracebacks.log'), 'w')
         self.tree.on_error = self.on_app_command_error
-        self.call_all()
+        handler = logging.StreamHandler(stream=self.stdout)
+        formatter = logging.Formatter('%(asctime)s:%(levelname)s:%(name)s: %(message)s')
+        level = logging.INFO
+        discord.utils.setup_logging(handler=handler, formatter=formatter, level=level)
+        consolechange.consoletitle(
+            f'{self.consoletext["WindowName"][0]}{self.consoletext["WindowVersion"][0]}')
 
     async def setup_hook(self) -> None:
-        await self.load_all_default_extension()
-
-    async def load_all_default_extension(self):
-        """
-        Handles loading all extensions that __init__
-        used to load up.
-        """
         self.remove_command("help")
         for plugins_cog in config.default_plugins:
             ret = await self.load_bot_extension(plugins_cog)
             if isinstance(ret, str):
                 print(ret)
 
-    async def load_bot_extension(self, extension_name):
+    async def load_bot_extension(self, extension_name) -> None | str:
         """
         loads a bot extension module.
         """
@@ -76,43 +67,25 @@ class BotClient(commands.Bot):
         except Exception:
             return str(traceback.format_exc())
 
-    async def unload_bot_extension(self, extension_name):
+    async def unload_bot_extension(self, extension_name) -> None:
         """
         unloads a bot extension module.
         """
         await self.unload_extension(f'cogs.{extension_name}')
 
-    async def reload_bot_extension(self, plugin_name):
+    async def reload_bot_extension(self, extension_name) -> None | str:
         """
         reloads a bot extension module.
         """
-        await self.unload_bot_extension(plugin_name)
-        err = await self.load_bot_extension(plugin_name)
-        if err is not None:
-            return err
+        try:
+            await self.reload_extension(f'cogs.{extension_name}')
+        except Exception:
+            return str(traceback.format_exc())
 
-    def call_all(self):
-        """
-        calls all functions that __init__ used to
-        call except for super.
-        """
-        handler = logging.StreamHandler(stream=self.stdout)
-        formatter = logging.Formatter('%(asctime)s:%(levelname)s:%(name)s: %(message)s')
-        level = logging.INFO
-        discord.utils.setup_logging(handler=handler, formatter=formatter, level=level)
-        consolechange.consoletitle(
-            f'{self.consoletext["WindowName"][0]}{self.consoletext["WindowVersion"][0]}')
-
-    async def login_helper(self):
-        """
-        Bot Login Helper.
-        """
-        await self.login_info()
-
-    async def login_info(self):
+    async def start_bot(self) -> None:
         """
         Allows the bot to Connect / Reconnect.
-        :return: Nothing or -1/-2 on failure.
+        :return: Nothing.
         """
         _continue = True if config.config is not None and config.found is True else False
         if _continue:
