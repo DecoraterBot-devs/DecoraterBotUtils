@@ -52,22 +52,22 @@ class BotClient(commands.Bot):
         self.call_all()
 
     async def setup_hook(self) -> None:
-        await self.load_all_default_plugins()
+        await self.load_all_default_extension()
 
-    async def load_all_default_plugins(self):
+    async def load_all_default_extension(self):
         """
-        Handles loading all plugins that __init__
+        Handles loading all extensions that __init__
         used to load up.
         """
         self.remove_command("help")
         for plugins_cog in config.default_plugins:
-            ret = await self.load_plugin(plugins_cog)
+            ret = await self.load_bot_extension(plugins_cog)
             if isinstance(ret, str):
                 print(ret)
 
     async def load_bot_extension(self, extension_name):
         """
-        loads an bot extension module.
+        loads a bot extension module.
         """
         try:
             await self.load_extension(f'.plugins.{extension_name}', package='DecoraterBotCore')
@@ -76,30 +76,16 @@ class BotClient(commands.Bot):
 
     async def unload_bot_extension(self, extension_name):
         """
-        unloads an bot extension module.
+        unloads a bot extension module.
         """
         await self.unload_extension(f'.plugins.{extension_name}', package='DecoraterBotCore')
 
-    async def load_plugin(self, plugin_name):
+    async def reload_bot_extension(self, plugin_name):
         """
-        Loads up a plugin in the plugins folder in DecoraterBotCore.
-        """
-        err = await self.load_bot_extension(plugin_name)
-        if err is not None:
-            return err
-
-    async def unload_plugin(self, plugin_name):
-        """
-        Unloads a plugin in the plugins folder in DecoraterBotCore.
+        reloads a bot extension module.
         """
         await self.unload_bot_extension(plugin_name)
-
-    async def reload_plugin(self, plugin_name):
-        """
-        Reloads a plugin in the plugins folder in DecoraterBotCore.
-        """
-        await self.unload_plugin(plugin_name)
-        err = await self.load_plugin(plugin_name)
+        err = await self.load_bot_extension(plugin_name)
         if err is not None:
             return err
 
@@ -168,7 +154,6 @@ class BotClient(commands.Bot):
         Bot Event.
         :return: Nothing.
         """
-        await self.tree.sync()
         await self.on_bot_login()
 
     async def on_bot_login(self):
@@ -184,6 +169,7 @@ class BotClient(commands.Bot):
                 self.user.name, self.user.id, discord.__version__))
             sys.stdout = self.stdout
             sys.stderr = self.stderr
+            await self.tree.sync()
 
     # Helpers.
     async def resolve_send_message_error(self, interaction: discord.Interaction):
