@@ -7,8 +7,8 @@ import time
 import os
 import sys
 import traceback
+from typing import Optional
 
-import consolechange
 import discord
 from discord import app_commands
 from discord.ext import commands
@@ -28,15 +28,14 @@ class BotClient(commands.Bot):
         self.uptime_count_begin = time.time()
         self.logged_in_ = False
         self.is_bot_logged_in = False
-        with BaseConfigReader(file='ConsoleWindow.json') as reader:
-            self.consoletext = reader[config.language]
+        self.localization_reader = DbLocalizationReader()
         super(BotClient, self).__init__(
-            description=self.consoletext['description'],
-            command_prefix=config.bot_prefix,
+            description=self.localization_reader.get_str(5, config.language),
+            command_prefix=commands.when_mentioned_or(),
             status=discord.Status.online,
             activity=discord.Streaming(
-                name=self.consoletext['On_Ready_Game'][0],
-                url=self.consoletext['twitch_url']),
+                name=self.localization_reader.get_str(3, config.language),
+                url=self.localization_reader.get_str(6, config.language)),
             # intents=self.bot_intents,
             intents=discord.Intents.default(),
             pm_help=False,
@@ -48,11 +47,30 @@ class BotClient(commands.Bot):
         formatter = logging.Formatter('%(asctime)s:%(levelname)s:%(name)s: %(message)s')
         level = logging.INFO
         discord.utils.setup_logging(handler=handler, formatter=formatter, level=level)
-        consolechange.consoletitle(
-            f'{self.consoletext["WindowName"][0]}{self.consoletext["WindowVersion"][0]}')
+
+    async def __aexit__(self, *exc):
+        self.localization_reader.close()
+        await super(BotClient, self).__aexit__(*exc)
+
+    class DbTranslator(app_commands.Translator):
+        """
+        Translates commands to another language using a database.
+        """
+        def __init__(self, localization_reader):
+            self.localization_reader = localization_reader
+
+        async def translate(self,
+                            string: app_commands.locale_str,
+                            locale: discord.Locale,
+                            context: app_commands.TranslationContextTypes) -> Optional[str]:
+            try:
+                return self.localization_reader.get_str(int(string.extras['str_id']), str(locale))
+            except KeyError:
+                return None
 
     async def setup_hook(self) -> None:
         self.remove_command("help")
+        await self.tree.set_translator(self.DbTranslator(self.localization_reader))
         for plugins_cog in config.default_plugins:
             ret = await self.load_bot_extension(plugins_cog)
             if isinstance(ret, str):
@@ -94,15 +112,11 @@ class BotClient(commands.Bot):
                     self.is_bot_logged_in = True
                     await self.start(config.bot_token)
             except discord.errors.GatewayNotFound:
-                print(str(self.consoletext['Login_Gateway_No_Find'][0]))
+                print(self.localization_reader.get_str(2, config.language))
                 return
-            except discord.errors.LoginFailure as e:
-                if str(e) == "Improper credentials have been passed.":
-                    print(str(self.consoletext['Login_Failure'][0]))
-                    return
-                elif str(e) == "Improper token has been passed.":
-                    print(str(self.consoletext['Invalid_Token'][0]))
-                    return
+            except discord.errors.LoginFailure:
+                print(self.localization_reader.get_str(1, config.language))
+                return
             except TypeError:
                 pass
             except KeyboardInterrupt:
@@ -110,7 +124,7 @@ class BotClient(commands.Bot):
             except Exception:
                 pass
         else:
-            print(str(self.consoletext['Credentials_Not_Found'][0]))
+            print(self.localization_reader.get_str(0, config.language))
             return
 
     async def on_app_command_error(self, interaction: discord.Interaction, error: app_commands.AppCommandError):
@@ -139,9 +153,9 @@ class BotClient(commands.Bot):
         if self.logged_in_ is False:
             self.logged_in_ = True
             init()
-            print(Fore.GREEN + Back.BLACK + Style.BRIGHT + str(
-                self.consoletext['Window_Login_Text'][0]).format(
-                self.user.name, self.user.id, discord.__version__))
+            print(Fore.GREEN + Back.BLACK + Style.BRIGHT + self.localization_reader.get_str(
+                4, config.language).format(
+                self.user.name, self.user.id, discord.__version__, '\n'))
             sys.stdout = self.stdout
             sys.stderr = self.stderr
             await self.tree.sync()

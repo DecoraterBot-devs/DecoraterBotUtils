@@ -5,10 +5,12 @@ Readers for DecoraterBot.
 import json
 import os
 import sys
+import sqlite3
 
 import aiofiles
 
-__all__ = ['BaseConfigReader', 'BotCredentialsReader']
+__all__ = ['BaseConfigReader', 'BotCredentialsReader',
+           'DbLocalizationReader']
 
 
 class BaseConfigReader:
@@ -102,7 +104,65 @@ class BotCredentialsReader(BaseConfigReader):
         self.load()
 
         # populate the values from Credentials.json.
-        self.bot_prefix = self['bot_prefix']  # string
-        self.bot_token = self['token']  # string
-        self.language = self['language']  # string
-        self.default_plugins = self['default_plugins']  # dict
+        self.bot_token: str = self['token']  # string
+        self.language: str = self['language']  # string
+        self.default_plugins: dict = self['default_plugins']  # dict
+
+
+class BaseDbReader:
+    """
+    Reads values from a database.
+    """
+    def __init__(self):
+        self.connection: sqlite3.Connection = sqlite3.connect('localizations.db')
+
+    def __del__(self):
+        self.close()
+
+    def get_table_value(self, query: str) -> tuple | None:
+        """
+        Runs a query and returns a tuple of the results.
+        """
+        cursor: sqlite3.Cursor = self.connection.cursor()
+        cursor.execute(query)
+        result: tuple | None = cursor.fetchone()
+        cursor.close()
+        return result
+
+    def get_table_values(self, query: str) -> list[tuple] | None:
+        """
+        Runs a query and returns a dictionary of the rows with the results.
+        """
+        cursor: sqlite3.Cursor = self.connection.cursor()
+        cursor.execute(query)
+        result: list[tuple] | None = cursor.fetchall()
+        cursor.close()
+        return result
+
+    def close(self):
+        self.connection.close()
+
+
+class DbLocalizationReader(BaseDbReader):
+    """
+    Reads localized string values from a database.
+    """
+
+    def get_locale_id(self, locale: str) -> int:
+        result: int = self.get_table_value(
+            f'SELECT BaseLocalizationId FROM Localizations WHERE localization == \'{locale}\'')[0]
+        return result
+
+    def get_str(self, str_id: int, locale: str) -> str:
+        """
+        Gets a localized string from the database using a specific id and a specified locale.
+        """
+        locale_id = self.get_locale_id(locale)
+        results: tuple | None = self.get_table_value(
+            f'SELECT string FROM StringTable WHERE id == \'{str_id}\' AND localizationId == {locale_id}')
+        # if results is None, fall back to the english version of the string.
+        if results is None:
+            results = self.get_table_value(
+                f'SELECT string FROM StringTable WHERE id == \'{str_id}\' AND localizationId == 0')
+        result: str = results[0]
+        return result

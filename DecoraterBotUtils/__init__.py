@@ -11,8 +11,7 @@ Various things to DecoraterBot.
 """
 from . import client
 from . import readers
-from .checks import *
 
 # These are external things for DecoraterBot's Core.
 
-__all__ = (client.__all__, readers.__all__, ['Checks'])
+__all__ = (client.__all__, readers.__all__)
