@@ -16,7 +16,7 @@ from colorama import Fore, Back, Style, init
 
 from .readers import *
 
-__all__ = ['config', 'BotClient']
+__all__ = ['BotClient']
 
 
 class BotClient(commands.Bot):
@@ -26,16 +26,17 @@ class BotClient(commands.Bot):
     """
     def __init__(self, **kwargs):
         self.uptime_count_begin = time.time()
-        self.logged_in_ = False
-        self.is_bot_logged_in = False
-        self.localization_reader = DbLocalizationReader()
+        self.logged_in_: bool = False
+        self.is_bot_logged_in: bool = False
+        self.credentials_reader: DbCredentialsReader = DbCredentialsReader()
+        self.localization_reader: DbLocalizationReader = DbLocalizationReader()
         super(BotClient, self).__init__(
-            description=self.localization_reader.get_str(5, config.language),
+            description=self.localization_reader.get_str(5, self.credentials_reader.language),
             command_prefix=commands.when_mentioned_or(),
             status=discord.Status.online,
             activity=discord.Streaming(
-                name=self.localization_reader.get_str(3, config.language),
-                url=self.localization_reader.get_str(6, config.language)),
+                name=self.localization_reader.get_str(3, self.credentials_reader.language),
+                url=self.localization_reader.get_str(6, self.credentials_reader.language)),
             # intents=self.bot_intents,
             intents=discord.Intents.default(),
             pm_help=False,
@@ -71,7 +72,7 @@ class BotClient(commands.Bot):
     async def setup_hook(self) -> None:
         self.remove_command("help")
         await self.tree.set_translator(self.DbTranslator(self.localization_reader))
-        for plugins_cog in config.default_plugins:
+        for plugins_cog in self.credentials_reader.default_cogs:
             ret = await self.load_bot_extension(plugins_cog)
             if isinstance(ret, str):
                 print(ret)
@@ -105,27 +106,22 @@ class BotClient(commands.Bot):
         Allows the bot to Connect / Reconnect.
         :return: Nothing.
         """
-        _continue = True if config.config is not None and config.found is True else False
-        if _continue:
-            try:
-                if config.bot_token is not None:
-                    self.is_bot_logged_in = True
-                    await self.start(config.bot_token)
-            except discord.errors.GatewayNotFound:
-                print(self.localization_reader.get_str(2, config.language))
-                return
-            except discord.errors.LoginFailure:
-                print(self.localization_reader.get_str(1, config.language))
-                return
-            except TypeError:
-                pass
-            except KeyboardInterrupt:
-                pass
-            except Exception:
-                pass
-        else:
-            print(self.localization_reader.get_str(0, config.language))
+        try:
+            if self.credentials_reader.bot_token is not None:
+                self.is_bot_logged_in = True
+                await self.start(self.credentials_reader.bot_token)
+        except discord.errors.GatewayNotFound:
+            print(self.localization_reader.get_str(2, self.credentials_reader.language))
             return
+        except discord.errors.LoginFailure:
+            print(self.localization_reader.get_str(1, self.credentials_reader.language))
+            return
+        except TypeError:
+            pass
+        except KeyboardInterrupt:
+            pass
+        except Exception:
+            pass
 
     async def on_app_command_error(self, interaction: discord.Interaction, error: app_commands.AppCommandError):
         """..."""
@@ -154,7 +150,7 @@ class BotClient(commands.Bot):
             self.logged_in_ = True
             init()
             print(Fore.GREEN + Back.BLACK + Style.BRIGHT + self.localization_reader.get_str(
-                4, config.language).format(
+                4, self.credentials_reader.language).format(
                 self.user.name, self.user.id, discord.__version__, '\n'))
             sys.stdout = self.stdout
             sys.stderr = self.stderr
@@ -165,6 +161,3 @@ class BotClient(commands.Bot):
     #     _intents.members = True
     #     _intents.presences = True
     #     return _intents
-
-
-config = BotCredentialsReader()

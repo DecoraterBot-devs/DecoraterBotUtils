@@ -30,8 +30,7 @@ dependencies = [
     'regex',
     'colorama',
     'discord.py',
-    'aiohttp',
-    'aiofiles'
+    'aiohttp'
 ]
 
 [project.urls]

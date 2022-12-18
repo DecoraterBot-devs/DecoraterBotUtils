@@ -2,119 +2,18 @@
 """
 Readers for DecoraterBot.
 """
-import json
-import os
-import sys
+from os.path import exists as file_exists
 import sqlite3
 
-import aiofiles
-
-__all__ = ['BaseConfigReader', 'BotCredentialsReader',
-           'DbLocalizationReader']
-
-
-class BaseConfigReader:
-    """
-    Base config Class.
-    """
-    def __init__(self, file=None):
-        self.config = None
-        self.filename = file
-        self.json_file = os.path.join(sys.path[0], 'resources', 'ConfigData', self.filename)
-        self.found = os.path.isfile(self.json_file) and os.access(self.json_file, os.R_OK)
-
-    async def __aenter__(self):
-        await self.load_async()
-        return self
-
-    async def __aexit__(self, *exc):
-        await self.save_async()
-        return
-
-    def __enter__(self):
-        self.load()
-        return self
-
-    def __exit__(self, *exc):
-        self.save()
-        return
-
-    def __getitem__(self, item):
-        """
-        Gets a JSON Config Value basted on the key provided.
-        :param item: String key to the entry in the JSON file
-        :return: JSON config Value.
-        """
-        return self.config[item]
-
-    def __setitem__(self, key, value):
-        """
-        Sets a JSON Config Value basted on the key and data provided.
-        :param key: String key to the entry in the JSON file
-        :param value: Value to replace old value with.
-        """
-        self.config[key] = value
-
-    def __del__(self):
-        self.config = None
-        self.filename = None
-        self.json_file = None
-        self.found = None
-
-    def load(self):
-        """
-        Loads the JSON config Data.
-        :return: List.
-        """
-        try:
-            with open(self.json_file) as file:
-                self.config = json.load(file)
-        except(OSError, IOError):
-            pass
-
-    async def load_async(self):
-        """
-        Loads the JSON config Data.
-        :return: List.
-        """
-        try:
-            async with aiofiles.open(self.json_file) as file:
-                self.config = json.loads(await file.read())
-        except(OSError, IOError):
-            pass
-
-    def save(self):
-        with open(self.json_file, mode='w') as file:
-            json.dump(self.config, file, indent=4, sort_keys=True)
-
-    async def save_async(self):
-        async with aiofiles.open(self.json_file, mode='w') as file:
-            await file.write(json.dumps(self.config, indent=4, sort_keys=True))
-
-
-class BotCredentialsReader(BaseConfigReader):
-    """
-    Class for getting the Credentials.json config Values.
-    """
-    def __init__(self):
-        super(BotCredentialsReader, self).__init__(file='Credentials.json')
-
-        # manually run the load function so that way the json file
-        # gets loaded properly for the credential values to be properly set through this.
-        self.load()
-
-        # populate the values from Credentials.json.
-        self.bot_token: str = self['token']  # string
-        self.language: str = self['language']  # string
-        self.default_plugins: dict = self['default_plugins']  # dict
+__all__ = ['BaseDbReader', 'DbCredentialsReader', 'DbLocalizationReader']
 
 
 class BaseDbReader:
     """
     Reads values from a database.
     """
-    def __init__(self):
-        self.connection: sqlite3.Connection = sqlite3.connect('localizations.db')
+    def __init__(self, db_file: str):
+        self.connection: sqlite3.Connection = sqlite3.connect(db_file)
 
     def __del__(self):
         self.close()
@@ -143,10 +42,37 @@ class BaseDbReader:
         self.connection.close()
 
 
+class DbCredentialsReader(BaseDbReader):
+    """
+    Reads the bot's credentials from a database.
+    """
+    def __init__(self):
+        # when the bot's beta db is present, use that one instead (since if it exists we are most likely in testing).
+        super(DbCredentialsReader, self).__init__(
+            'credentials.db' if not file_exists('credentialsbeta.db') else 'credentialsbeta.db')
+
+    @property
+    def bot_token(self) -> str:
+        result: tuple | None = self.get_table_value('SELECT Token FROM Credentials WHERE id == 1')
+        return result[0] if result is not None else None
+
+    @property
+    def language(self) -> str:
+        result: tuple | None = self.get_table_value('SELECT Language FROM Credentials WHERE id == 1')
+        return result[0] if result is not None else None
+
+    @property
+    def default_cogs(self) -> list[str] | None:
+        results: list[tuple] = self.get_table_values('SELECT Cog FROM DefaultCogs')
+        return [item[0] for item in results] if results is not None else None
+
+
 class DbLocalizationReader(BaseDbReader):
     """
     Reads localized string values from a database.
     """
+    def __init__(self):
+        super(DbLocalizationReader, self).__init__('localizations.db')
 
     def get_locale_id(self, locale: str) -> int:
         result: int = self.get_table_value(
