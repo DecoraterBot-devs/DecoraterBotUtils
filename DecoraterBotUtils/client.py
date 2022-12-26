@@ -74,6 +74,15 @@ class BotClient(commands.Bot):
         await self.tree.set_translator(self.DbTranslator(self.localization_reader))
         for plugins_cog in self.credentials_reader.default_cogs:
             ret = await self.load_bot_extension(plugins_cog)
+            if self.logged_in_ is False:
+                self.logged_in_ = True
+                init()
+                print(Fore.GREEN + Back.BLACK + Style.BRIGHT + self.localization_reader.get_str(
+                    4, self.credentials_reader.language).format(
+                    self.user.name, self.user.id, discord.__version__, '\n'))
+                sys.stdout = self.stdout
+                sys.stderr = self.stderr
+                await self.tree.sync()
             if isinstance(ret, str):
                 print(ret)
 
@@ -134,28 +143,6 @@ class BotClient(commands.Bot):
             sys.stderr.write(f'Error: ```py\n{exceptioninfo}\n``` (Check Failure)')
         else:
             pass
-
-    async def on_ready(self):
-        """
-        Bot Event.
-        :return: Nothing.
-        """
-        await self.on_bot_login()
-
-    async def on_bot_login(self):
-        """
-        Function that does the on_ready event stuff after logging in.
-        :return: Nothing.
-        """
-        if self.logged_in_ is False:
-            self.logged_in_ = True
-            init()
-            print(Fore.GREEN + Back.BLACK + Style.BRIGHT + self.localization_reader.get_str(
-                4, self.credentials_reader.language).format(
-                self.user.name, self.user.id, discord.__version__, '\n'))
-            sys.stdout = self.stdout
-            sys.stderr = self.stderr
-            await self.tree.sync()
 
     # def bot_intents(self) -> discord.Intents:
     #     _intents = discord.Intents.default()
