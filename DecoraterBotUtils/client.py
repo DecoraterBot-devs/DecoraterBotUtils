@@ -125,12 +125,13 @@ class BotClient(commands.Bot):
 
     async def on_app_command_error(self, interaction: discord.Interaction, error: app_commands.AppCommandError):
         """..."""
+        str(interaction)
         str(self)
         exceptioninfo = "".join(traceback.format_exception(error))
         if isinstance(error, app_commands.CommandInvokeError):
-            await interaction.response.send_message(f"Error: ```py\n{exceptioninfo}\n``` (Invoke Error)")
+            sys.stderr.write(f'Error: ```py\n{exceptioninfo}\n``` (Invoke Error)')
         elif isinstance(error, app_commands.CheckFailure):
-            await interaction.response.send_message(f"Error: ```py\n{exceptioninfo}\n``` (Check Failure)")
+            sys.stderr.write(f'Error: ```py\n{exceptioninfo}\n``` (Check Failure)')
         else:
             pass
 
