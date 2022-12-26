@@ -24,19 +24,35 @@ class BotClient(commands.Bot):
     Bot Main client Class.
     This is where the Events are Registered.
     """
-    def __init__(self, **kwargs):
+    def __init__(
+            self,
+            readers: list[DbCredentialsReader | DbLocalizationReader],
+            description: str,
+            activity_name: str,
+            activity_url: str,
+            **kwargs):
         self.uptime_count_begin = time.time()
         self.logged_in_: bool = False
         self.is_bot_logged_in: bool = False
-        self.credentials_reader: DbCredentialsReader = DbCredentialsReader()
-        self.localization_reader: DbLocalizationReader = DbLocalizationReader()
+        if len(readers) != 2:
+            raise RuntimeError('There must be 2 readers at all times.')
+        if isinstance(readers[0], DbCredentialsReader):
+            self.credentials_reader: DbCredentialsReader = readers[0]
+        else:
+            raise RuntimeError(
+                f'The first reader must be the credentials reader. Got \'{readers[0].__class__.__name__}\'.')
+        if isinstance(readers[1], DbLocalizationReader):
+            self.db_translator = self.DbTranslator(readers[1])
+        else:
+            raise RuntimeError(
+                f'The second reader must be the localizations reader. Got \'{readers[1].__class__.__name__}\'.')
         super(BotClient, self).__init__(
-            description=self.localization_reader.get_str(5, self.credentials_reader.language),
+            description=description,
             command_prefix=commands.when_mentioned_or(),
             status=discord.Status.online,
             activity=discord.Streaming(
-                name=self.localization_reader.get_str(3, self.credentials_reader.language),
-                url=self.localization_reader.get_str(6, self.credentials_reader.language)),
+                name=activity_name,
+                url=activity_url),
             # intents=self.bot_intents,
             intents=discord.Intents.default(),
             pm_help=False,
@@ -49,42 +65,43 @@ class BotClient(commands.Bot):
         level = logging.INFO
         discord.utils.setup_logging(handler=handler, formatter=formatter, level=level)
 
-    async def __aexit__(self, *exc):
-        self.localization_reader.close()
-        await super(BotClient, self).__aexit__(*exc)
-
     class DbTranslator(app_commands.Translator):
         """
         Translates commands to another language using a database.
         """
         def __init__(self, localization_reader):
-            self.localization_reader = localization_reader
+            self.localization_reader: DbLocalizationReader = localization_reader
 
         async def translate(self,
                             string: app_commands.locale_str,
                             locale: discord.Locale,
                             context: app_commands.TranslationContextTypes) -> Optional[str]:
             try:
-                return self.localization_reader.get_str(int(string.extras['str_id']), str(locale))
+                return await self.localization_reader.get_str_async(
+                    int(string.extras['str_id']),
+                    str(locale))
             except KeyError:
                 return None
 
     async def setup_hook(self) -> None:
         self.remove_command("help")
-        await self.tree.set_translator(self.DbTranslator(self.localization_reader))
-        for plugins_cog in self.credentials_reader.default_cogs:
+        await self.tree.set_translator(self.db_translator)
+        if self.logged_in_ is False:
+            self.logged_in_ = True
+            init()
+            print(Fore.GREEN + Back.BLACK + Style.BRIGHT +
+                  (await self.db_translator.translate(
+                      app_commands.locale_str('', str_id=4),
+                      discord.Locale(await self.credentials_reader.language),
+                      app_commands.translator.OtherTranslationContext)).format(
+                      self.user.name, self.user.id, discord.__version__, '\n'))
+            sys.stdout = self.stdout
+            sys.stderr = self.stderr
+        for plugins_cog in await self.credentials_reader.default_cogs:
             ret = await self.load_bot_extension(plugins_cog)
-            if self.logged_in_ is False:
-                self.logged_in_ = True
-                init()
-                print(Fore.GREEN + Back.BLACK + Style.BRIGHT + self.localization_reader.get_str(
-                    4, self.credentials_reader.language).format(
-                    self.user.name, self.user.id, discord.__version__, '\n'))
-                sys.stdout = self.stdout
-                sys.stderr = self.stderr
-                await self.tree.sync()
             if isinstance(ret, str):
                 print(ret)
+        await self.tree.sync()
 
     async def load_bot_extension(self, extension_name) -> None | str:
         """
@@ -116,14 +133,20 @@ class BotClient(commands.Bot):
         :return: Nothing.
         """
         try:
-            if self.credentials_reader.bot_token is not None:
+            if await self.credentials_reader.bot_token is not None:
                 self.is_bot_logged_in = True
-                await self.start(self.credentials_reader.bot_token)
+                await self.start(await self.credentials_reader.bot_token)
         except discord.errors.GatewayNotFound:
-            print(self.localization_reader.get_str(2, self.credentials_reader.language))
+            print(await self.db_translator.translate(
+                app_commands.locale_str('', str_id=2),
+                discord.Locale(await self.credentials_reader.language),
+                app_commands.translator.OtherTranslationContext))
             return
         except discord.errors.LoginFailure:
-            print(self.localization_reader.get_str(1, self.credentials_reader.language))
+            print(await self.db_translator.translate(
+                app_commands.locale_str('', str_id=1),
+                discord.Locale(await self.credentials_reader.language),
+                app_commands.translator.OtherTranslationContext))
             return
         except TypeError:
             pass

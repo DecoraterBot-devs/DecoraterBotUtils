@@ -30,7 +30,8 @@ dependencies = [
     'regex',
     'colorama',
     'discord.py',
-    'aiohttp'
+    'aiohttp',
+    'asqlite @ git+https://github.com/Rapptz/asqlite.git'
 ]
 
 [project.urls]
