@@ -49,6 +49,7 @@ class BotClient(commands.Bot):
         super(BotClient, self).__init__(
             description=description,
             command_prefix=commands.when_mentioned_or(),
+            help_command=None,
             status=discord.Status.online,
             activity=discord.Streaming(
                 name=activity_name,
@@ -84,7 +85,6 @@ class BotClient(commands.Bot):
                 return None
 
     async def setup_hook(self) -> None:
-        self.remove_command("help")
         await self.tree.set_translator(self.db_translator)
         if self.logged_in_ is False:
             self.logged_in_ = True

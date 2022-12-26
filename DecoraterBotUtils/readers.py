@@ -52,7 +52,7 @@ class DbCredentialsReader(BaseDbReader):
 
     def get_db_file(self) -> str:
         # when the bot's beta db is present, use that one instead (since if it exists we are most likely in testing).
-        return 'credentials.db' if not file_exists('credentialsbeta.db') else 'credentialsbeta.db'
+        return 'credentialsbeta.db' if file_exists('credentialsbeta.db') else 'credentials.db'
 
     @property
     async def bot_token(self) -> str:
