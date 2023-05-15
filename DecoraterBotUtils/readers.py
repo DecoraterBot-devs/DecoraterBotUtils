@@ -81,10 +81,15 @@ class DbLocalizationReader(BaseDbReader):
     async def _get_locale_id(self, locale: str) -> int:
         results: sqlite3.Row = await self.get_table_value_async(
             f'SELECT BaseLocalizationId FROM Localizations WHERE localization == \'{locale}\'')
-        result: int = results['BaseLocalizationId']
-        return result
+        try:
+            result: int = results['BaseLocalizationId']
+            return result
+        except TypeError:
+            print(f'Localization for the \'{locale}\' is missing in the database.')
+            # fall back to the english version of the string.
+            return 0
 
-    async def get_str_async(self, str_id: int, locale: str) -> str:
+    async def get_str_async(self, str_id: int, locale: str) -> str | None:
         """
         Gets a localized string from the database using a specific id and a specified locale.
         """
@@ -95,5 +100,8 @@ class DbLocalizationReader(BaseDbReader):
         if results is None:
             results = await self.get_table_value_async(
                 f'SELECT string FROM StringTable WHERE id == \'{str_id}\' AND localizationId == 0')
-        result: str = results['string']
-        return result
+        try:
+            result: str = results['string']
+            return result
+        except TypeError:
+            return None

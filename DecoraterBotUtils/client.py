@@ -152,7 +152,8 @@ class BotClient(commands.Bot):
             pass
         except KeyboardInterrupt:
             pass
-        except Exception:
+        except Exception as ex:
+            traceback.print_exception(ex)
             pass
 
     async def on_app_command_error(self, interaction: discord.Interaction, error: app_commands.AppCommandError):
