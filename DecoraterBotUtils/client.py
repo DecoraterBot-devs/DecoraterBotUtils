@@ -48,7 +48,7 @@ class BotClient(commands.Bot):
                 f'The second reader must be the localizations reader. Got \'{readers[1].__class__.__name__}\'.')
         super(BotClient, self).__init__(
             description=description,
-            command_prefix=commands.when_mentioned_or(),
+            command_prefix=[],
             help_command=None,
             status=discord.Status.online,
             activity=discord.Streaming(
