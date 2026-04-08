@@ -27,11 +27,6 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 dependencies = [
-    'regex',
-    'colorama',
-    'discord.py',
-    'aiohttp',
-    'asqlite @ git+https://github.com/Rapptz/asqlite.git'
 ]
 
 [project.urls]
